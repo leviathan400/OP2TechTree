@@ -1,5 +1,12 @@
 # OP2TechTree
-Outpost 2 tech tree editor.
+
+![Screenshot](https://images.outpostuniverse.org/OP2TechTree.png)
+
+## What is it?
+
+Outpost 2 tech tree editor. Open, edit or create new Outpost 2: Divided Destiny tech tree text files. 
+
+Default tech trees are: edentek.txt, ply_tek.txt, tutortek.txt and multitek.txt
 
 
 # Outpost 2 Tech Tree File Format
@@ -126,8 +133,8 @@ TOWER_GUARD, TOWER_LIGHT, TRADE, TUBE, UNIVERSITY, WALL_TRUCK
 ```
 BEGIN_TECH "Reinforced Vehicle Construction" 05317
     CATEGORY        4
-    DESCRIPTION     "ConVec, Cargo Truck, and Evacuation Transport Hit Points increased; production costs of these vehicles changed. _______________________________________  The durability of these vehicles has been improved through a combination of revised construction and the use of a composite alloy incorporating Rare Metals."
-    TEASER          "Increases ConVec, Cargo Truck, and Evacuation Transport Hit Points. _______________________________________  The Cargo Truck, and some similar vehicles, have shown themselves to be all too vulnerable to damage from disasters, explosions, and attacks.  Through the use of new composite alloys incorporating Rare Metals, we can increase their durability."
+    DESCRIPTION     "ConVec, Cargo Truck, and Evacuation Transport Hit Points increased."
+    TEASER          "Increases ConVec, Cargo Truck, and Evacuation Transport Hit Points."
     IMPROVE_DESC    "Increased hit points"
     REQUIRES        05110
     EDEN_COST       1200
@@ -136,13 +143,10 @@ BEGIN_TECH "Reinforced Vehicle Construction" 05317
     LAB             2
     UNIT_PROP CON_TRUCK Hit_Points 375
     UNIT_PROP CON_TRUCK Common_Required 1000
-    UNIT_PROP CON_TRUCK Rare_Required 150
     UNIT_PROP BIG_TRUCK Hit_Points 750
     UNIT_PROP BIG_TRUCK Common_Required 500
-    UNIT_PROP BIG_TRUCK Rare_Required 100
     UNIT_PROP MOBILE_HOME Hit_Points 280
     UNIT_PROP MOBILE_HOME Common_Required 650
-    UNIT_PROP MOBILE_HOME Rare_Required 100
 END_TECH
 ```
 
