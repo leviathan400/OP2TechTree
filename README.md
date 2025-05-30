@@ -41,9 +41,9 @@ END_TECH
 
 ### Basic Information Tags
 - `CATEGORY int` - Technology category/icon (0-12)
-- `DESCRIPTION "string"` - Full research description (max 800 chars)
-- `TEASER "string"` - Pre-research teaser text (max 800 chars)  
-- `IMPROVE_DESC "string"` - Improvement description (max 800 chars)
+- `DESCRIPTION string` - Full research description (max 800 chars)
+- `TEASER string` - Pre-research teaser text (max 800 chars)  
+- `IMPROVE_DESC string` - Improvement description (max 800 chars)
 
 ### Requirements & Costs
 - `REQUIRES int` - Required prerequisite technology ID (can have multiple)
@@ -59,18 +59,22 @@ END_TECH
 
 ## Faction-Specific Technology System
 
-### Cost System
-- **COST alone**: Same cost for both factions
-- **EDEN_COST/PLYMOUTH_COST**: Faction-specific costs
-  - **Positive number**: Research cost in RP (Research Points)
-  - **0**: Free/already researched at game start
-  - **-1**: Permanently disabled for that faction
+### Cost / Research Time System
+- **COST** alone: Same cost for both factions
+- **EDEN_COST / PLYMOUTH_COST**: Faction-specific costs
+
+| Value | Effect | Visibility | Notes |
+|-------|--------|------------|-------|
+| `COST 0` | Pre-researched | Invisible in lab menu | Already completed |
+| `COST -1` | Disabled | Not available | Faction restrictions |
+| `COST > 0` | Available | Shows in lab or completed list | Research time (higher = longer) |
+
+Cost values represent research time, not game resources. Higher values take longer to research.
 
 ### Asymmetric Faction Design
 The cost system enables asymmetric faction gameplay:
 - **Eden** starts with Laser weapons (free) but cannot research Microwave weapons (disabled)
 - **Plymouth** starts with Microwave weapons (free) but cannot research Laser weapons (disabled)
-- Different costs encourage different strategic paths for each faction
 
 ## Technology Progression
 
