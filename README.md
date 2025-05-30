@@ -6,8 +6,16 @@
 
 Outpost 2 tech tree editor. Open, edit or create new Outpost 2: Divided Destiny tech tree text files. 
 
-Default tech trees are: edentek.txt, ply_tek.txt, tutortek.txt and multitek.txt
+Default tech trees are: **edentek.txt**, **ply_tek.txt**, **tutortek.txt** and **multitek.txt**
 
+### Tech Tree File Types
+
+- **edentek.txt** - Eden single-player campaign technology tree
+- **ply_tek.txt** - Plymouth single-player campaign technology tree  
+- **tutortek.txt** - Tutorial mission technology tree
+- **multitek.txt** - Multiplayer technology tree (both factions)
+
+Each file defines different technology progressions, costs, and availability for different game modes and factions.
 
 # Outpost 2 Tech Tree File Format
 
@@ -38,16 +46,39 @@ END_TECH
 - `IMPROVE_DESC "string"` - Improvement description (max 800 chars)
 
 ### Requirements & Costs
-- `REQUIRES int` - Required prerequisite technology ID
+- `REQUIRES int` - Required prerequisite technology ID (can have multiple)
 - `COST int` - Research cost for both colonies
-- `EDEN_COST int` - Research cost for Eden colony
-- `PLYMOUTH_COST int` - Research cost for Plymouth colony
+- `EDEN_COST int` - Research cost for Eden colony (-1 = disabled, 0 = free)
+- `PLYMOUTH_COST int` - Research cost for Plymouth colony (-1 = disabled, 0 = free)
 - `MAX_SCIENTISTS int` - Maximum scientists (4-18, or 1 for special techs)
 - `LAB int` - Required lab level (1=Basic, 2=Standard, 3=Advanced)
 
 ### Unit/Building Upgrades
 - `UNIT_PROP token token int` - Unit property modification
   - Format: `UNIT_PROP [UNIT_TYPE] [PROPERTY] [VALUE]`
+
+## Faction-Specific Technology System
+
+### Cost System
+- **COST alone**: Same cost for both factions
+- **EDEN_COST/PLYMOUTH_COST**: Faction-specific costs
+  - **Positive number**: Research cost in RP (Research Points)
+  - **0**: Free/already researched at game start
+  - **-1**: Permanently disabled for that faction
+
+### Asymmetric Faction Design
+The cost system enables asymmetric faction gameplay:
+- **Eden** starts with Laser weapons (free) but cannot research Microwave weapons (disabled)
+- **Plymouth** starts with Microwave weapons (free) but cannot research Laser weapons (disabled)
+- Different costs encourage different strategic paths for each faction
+
+## Technology Progression
+
+### Campaign Structure
+Single-player campaigns use **Tech Levels** (01000, 02000, 03000, etc.) to gate technology progression by mission. Each mission unlocks specific tech levels, making certain technologies available for research.
+
+### Prerequisites
+Technologies can require multiple prerequisites using multiple `REQUIRES` tags. All prerequisites must be completed before a technology becomes available for research.
 
 ## System Limits
 
@@ -114,22 +145,26 @@ TOWER_GUARD, TOWER_LIGHT, TRADE, TUBE, UNIVERSITY, WALL_TRUCK
 
 | Value | Category |
 |-------|----------|
-| 0 | Blank/No Icon |
-| 1 | Basic |
-| 2 | Defenses |
-| 3 | Power |
-| 4 | Vehicles |
-| 5 | Factory |
-| 6 | Food |
-| 7 | Residence |
-| 8 | Lab |
-| 9 | Weapons |
-| 10 | Rare |
-| 11 | Morale |
-| 12 | Research |
+| 0 | No Icon / Blank / Free |
+| 1 | Lab Icon / Database Recovery |
+| 2 | Factory Icon / Infrastructure |
+| 3 | Power Icon / Power Generation |
+| 4 | Vehicle Icon / Vehicles & Robotics |
+| 5 | Food Icon / Food Production |
+| 6 | Mining Icon / Mining & Metals |
+| 7 | Weapons Icon / Weapons |
+| 8 | Spaceport Icon / Space Program |
+| 9 | Morale Icon / Population |
+| 10 | Geological Icon / Disasters |
+| 11 | Emergency Icon / Medical & Emergency |
+| 12 | Starship Icon / Starship Components |
+
+### Category Usage
+- **Category 0**: Used for free/unlocked technologies and tech level markers
+- **Category 1**: Database Recovery technologies appear primarily in single-player campaigns (rebuilding lost Earth knowledge)
+- **Categories 2-12**: Research technologies organized by functional area
 
 ## Example Technology
-
 ```
 BEGIN_TECH "Reinforced Vehicle Construction" 05317
     CATEGORY        4
@@ -158,3 +193,12 @@ END_TECH
 - **Pairing**: Every BEGIN_TECH must be paired with END_TECH
 - **Conventions**: Most techs specify at least CATEGORY and COST
 - **Lab Requirements**: Lab value typically not set for free and disabled techs
+
+## Design Philosophy
+
+The Outpost 2 tech tree system supports:
+- **Asymmetric faction gameplay** through differential costs and availability
+- **Mission-gated progression** in single-player campaigns
+- **Branching research paths** with multiple prerequisites
+- **Meaningful choices** between different strategic directions
+- **Unit progression** through upgrade technologies that improve existing units
