@@ -8,11 +8,15 @@ Outpost 2 tech tree editor. Open, edit or create new Outpost 2: Divided Destiny 
 
 Default tech trees are: **edentek.txt**, **ply_tek.txt**, **tutortek.txt** and **multitek.txt**
 
+The techs are stored in `\OPU\base\techs`.
+
+The demo techs are stored in `\OPU\maps\OfficialDemos`.
+
 ### Tech Tree File Types
 
 - **edentek.txt** - Eden single-player campaign technology tree
 - **ply_tek.txt** - Plymouth single-player campaign technology tree  
-- **tutortek.txt** - Tutorial mission technology tree
+- **tutortek.txt** - Tutorial mission's technology tree
 - **multitek.txt** - Multiplayer technology tree (both factions)
 
 Each file defines different technology progressions, costs, and availability for different game modes and factions.
