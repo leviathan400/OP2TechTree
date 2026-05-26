@@ -1,6 +1,7 @@
-﻿' Constants and utility classes for Outpost 2 Tech Tree Editor
+' Constants and utility classes for Outpost 2 Tech Tree Editor
 
 Imports System.IO
+Imports System.Text
 
 Public Class TechConstants
     ' Technology Categories
@@ -15,7 +16,7 @@ Public Class TechConstants
         {7, "Weapons"},
         {8, "Space Program"},
         {9, "Morale & Population"},
-        {10, "Disaster Prediction"},
+        {10, "Disasters"},
         {11, "Medical & Emergency"},
         {12, "Starship Components"}
     }
@@ -28,26 +29,28 @@ Public Class TechConstants
         {3, "Advanced Lab"}
     }
 
-    ' Common Unit Types
+    ' Canonical Unit Type list (matches README and form combo box - single source of truth).
     Public Shared ReadOnly UnitTypes() As String = {
-        "AGRIDOME", "TOKAMAK", "RESIDENCE", "COMMAND_CENTER", "STRUCTURE_FACTORY",
-        "SMELTER", "SMELTER_ADV", "MINE", "MINE_ADV", "MAGMA_WELL", "GORF",
-        "MED_CENTER", "NURSERY", "UNIVERSITY", "RECREATION", "FORUM",
-        "LIGHT_TOWER", "TOWER_GUARD", "DIRT", "OBSERVATORY", "METEOR_DEFENSE",
-        "SCOUT", "LIGHT_TANK", "MED_TANK", "BIG_TANK", "CON_TRUCK", "BIG_TRUCK",
-        "WALL_TRUCK", "BULL_DOZER", "MINER", "SURVEYOR", "MOBILE_HOME",
-        "REPAIR_TRUCK", "SPIDER", "SCORPION", "GARAGE", "SPACEPORT",
-        "GEOTHERMAL", "SOLAR_ARRAY", "FACT_STRUCTURE", "FACT_VEHICLE",
-        "FACT_LUXURY", "FACT_ANDROID", "MICROWAVE", "LASER", "RAIL_GUN",
-        "EMP", "FOAM", "ACID", "SPAM", "STARFLARE", "SUPERNOVA", "THORS_HAMMER"
+        "ACID", "AGRIDOME", "ASE", "BIG_TANK", "BIG_TRUCK", "BULL_DOZER",
+        "CANNON", "COMMAND", "CON_TRUCK", "DIRT", "EMP", "EMP_MISSILE",
+        "FACT_ANDROID", "FACT_LUXURY", "FACT_STRUCTURE", "FACT_VEHICLE",
+        "FOAM", "FORUM", "GARAGE", "GEO_METRO", "GEOTHERMAL", "GORF",
+        "LAB", "LAB_ADV", "LAB_STANDARD", "LASER", "LIGHT_TANK", "MAGMA_WELL",
+        "MED_CENTER", "MED_TANK", "METEOR_DEF", "MICROWAVE", "MINE", "MINE_ADV",
+        "MINER", "MOBILE_HOME", "NURSERY", "OBSERVATORY", "RAIL_GUN", "RECREATION",
+        "REPAIR_TRUCK", "RESIDENCE", "RESIDENCE_E", "RESIDENCE_P", "ROBOT_COMMAND",
+        "SCORPION", "SCORPION_WEAPON", "SCOUT", "SELF_DESTRUCT", "SELF_DESTRUCT_ADV",
+        "SMELTER", "SMELTER_ADV", "SOLAR", "SPAM", "SPACEPORT", "SPIDER",
+        "STORAGE_ORE", "STORAGE_RARE", "SURVEYOR", "THORS_HAMMER", "TOKAMAK",
+        "TOWER_GUARD", "TOWER_LIGHT", "TRADE", "TUBE", "UNIVERSITY", "WALL_TRUCK"
     }
 
-    ' Common Unit Properties
+    ' Canonical Unit Property list (sorted alphabetically for the form combo).
     Public Shared ReadOnly UnitProperties() As String = {
-        "Production_Capacity", "Production_Rate", "Storage_Capacity",
-        "Power_Required", "Workers_Required", "Hit_Points", "Armor",
-        "Move_Speed", "Sight_Range", "Rate_Of_Fire", "Concussion_Damage",
-        "Penetration_Damage", "Common_Required", "Rare_Required", "Improved"
+        "Armor", "Common_Required", "Concussion_Damage", "Hit_Points",
+        "Improved", "Move_Speed", "Penetration_Damage", "Power_Required",
+        "Production_Capacity", "Production_Rate", "Rate_Of_Fire", "Rare_Required",
+        "Sight_Range", "Storage_Capacity", "Workers_Required"
     }
 
     ' Valid Tech ID Pattern
@@ -60,7 +63,14 @@ Public Class TechConstants
 
     ' Scientist limits
     Public Const MIN_SCIENTISTS As Integer = 1
-    Public Const MAX_SCIENTISTS As Integer = 20
+    Public Const MAX_SCIENTISTS As Integer = 18
+
+    ' Per-tech limits
+    Public Const MAX_PREREQUISITES As Integer = 32
+    Public Const MAX_UNIT_PROPERTIES As Integer = 32
+    Public Const MAX_TECHS As Integer = 256
+    Public Const MAX_NAME_LENGTH As Integer = 100
+    Public Const MAX_TEXT_LENGTH As Integer = 800
 End Class
 
 Public Class TechValidator
@@ -73,17 +83,15 @@ Public Class TechValidator
         ElseIf Not System.Text.RegularExpressions.Regex.IsMatch(tech.ID, TechConstants.TechIdPattern) Then
             errors.Add("Tech ID must be exactly 5 digits")
         Else
-            ' Validate tech ID is not negative
             Dim techIdNum As Integer
             If Integer.TryParse(tech.ID, techIdNum) Then
                 If techIdNum < 0 Then
                     errors.Add("Tech ID should not be negative")
                 End If
 
-                ' Validate tech level (techNum / 1000) is not 0
                 Dim techLevel As Integer = techIdNum \ 1000
                 If techLevel = 0 Then
-                    errors.Add("Tech level (first 2 digits / 10) must not be 0")
+                    errors.Add("Tech level (techId \ 1000) must not be 0")
                 End If
             Else
                 errors.Add("Tech ID must be a valid integer")
@@ -93,21 +101,20 @@ Public Class TechValidator
         ' Validate Tech Name
         If String.IsNullOrEmpty(tech.Name) Then
             errors.Add("Tech Name is required")
-        ElseIf tech.Name.Length > 100 Then
-            errors.Add("Tech Name must not exceed 100 characters (currently " & tech.Name.Length & ")")
+        ElseIf tech.Name.Length > TechConstants.MAX_NAME_LENGTH Then
+            errors.Add($"Tech Name must not exceed {TechConstants.MAX_NAME_LENGTH} characters (currently {tech.Name.Length})")
         End If
 
-        ' Validate string lengths (800 character limit)
-        If tech.Teaser.Length > 800 Then
-            errors.Add("Teaser must not exceed 800 characters (currently " & tech.Teaser.Length & ")")
+        If tech.Teaser.Length > TechConstants.MAX_TEXT_LENGTH Then
+            errors.Add($"Teaser must not exceed {TechConstants.MAX_TEXT_LENGTH} characters (currently {tech.Teaser.Length})")
         End If
 
-        If tech.Description.Length > 800 Then
-            errors.Add("Description must not exceed 800 characters (currently " & tech.Description.Length & ")")
+        If tech.Description.Length > TechConstants.MAX_TEXT_LENGTH Then
+            errors.Add($"Description must not exceed {TechConstants.MAX_TEXT_LENGTH} characters (currently {tech.Description.Length})")
         End If
 
-        If tech.ImproveDesc.Length > 800 Then
-            errors.Add("Improvement Description must not exceed 800 characters (currently " & tech.ImproveDesc.Length & ")")
+        If tech.ImproveDesc.Length > TechConstants.MAX_TEXT_LENGTH Then
+            errors.Add($"Improvement Description must not exceed {TechConstants.MAX_TEXT_LENGTH} characters (currently {tech.ImproveDesc.Length})")
         End If
 
         ' Validate Category
@@ -123,33 +130,32 @@ Public Class TechValidator
             errors.Add("Plymouth Cost must be -1 (disabled), 0 (free), or positive")
         End If
 
-        ' At least one faction must be able to research
         If tech.EdenCost = -1 AndAlso tech.PlymouthCost = -1 Then
             errors.Add("Technology must be available to at least one faction")
         End If
 
-        ' Validate Scientists (4-18 inclusive, but 1 is allowed for special cases)
+        ' Validate Scientists (4-18 inclusive, 1 allowed for special non-lab techs, 0 means unset)
         If tech.MaxScientists > 0 Then
             If tech.MaxScientists = 1 Then
-                ' Special case - allowed for built-in techs that avoid lab research
+                ' Special case
             ElseIf tech.MaxScientists < 4 OrElse tech.MaxScientists > 18 Then
                 errors.Add("Max Scientists must be 1 (special case) or between 4 and 18 inclusive")
             End If
         End If
 
-        ' Validate Lab Level (0=None, 1=Basic, 2=Standard, 3=Advanced)
+        ' Validate Lab Level
         If tech.Lab < 0 OrElse tech.Lab > 3 Then
             errors.Add("Lab level must be 0 (None), 1 (Basic), 2 (Standard), or 3 (Advanced)")
         End If
 
-        ' Validate Prerequisites count (max 32)
-        If tech.Prerequisites.Count > 32 Then
-            errors.Add("Maximum of 32 prerequisites allowed (currently " & tech.Prerequisites.Count & ")")
+        ' Validate Prerequisites count
+        If tech.Prerequisites.Count > TechConstants.MAX_PREREQUISITES Then
+            errors.Add($"Maximum of {TechConstants.MAX_PREREQUISITES} prerequisites allowed (currently {tech.Prerequisites.Count})")
         End If
 
-        ' Validate Unit Properties count (max 32 upgrade tags)
-        If tech.UnitProperties.Count > 32 Then
-            errors.Add("Maximum of 32 unit properties allowed (currently " & tech.UnitProperties.Count & ")")
+        ' Validate Unit Properties count
+        If tech.UnitProperties.Count > TechConstants.MAX_UNIT_PROPERTIES Then
+            errors.Add($"Maximum of {TechConstants.MAX_UNIT_PROPERTIES} unit properties allowed (currently {tech.UnitProperties.Count})")
         End If
 
         ' Validate Unit Properties
@@ -163,12 +169,10 @@ Public Class TechValidator
             If String.IsNullOrEmpty(prop.Value) Then
                 errors.Add("Unit Property missing Value")
             Else
-                ' Validate property value is a valid integer
                 Dim propValue As Integer
                 If Not Integer.TryParse(prop.Value, propValue) Then
                     errors.Add($"Unit Property value '{prop.Value}' for {prop.UnitType}.{prop.PropertyName} must be a valid integer")
                 Else
-                    ' Special validation for Armor property (0-5 inclusive)
                     If prop.PropertyName.ToUpper() = "ARMOR" Then
                         If propValue < 0 OrElse propValue > 5 Then
                             errors.Add($"Armor property must be between 0 and 5 inclusive (currently {propValue})")
@@ -184,18 +188,19 @@ Public Class TechValidator
     Public Shared Function ValidateTechTree(techList As Dictionary(Of String, fMain.Technology)) As List(Of String)
         Dim errors As New List(Of String)
 
-        ' Check maximum tech count (256 max)
-        If techList.Count > 256 Then
-            errors.Add($"Maximum of 256 technologies allowed (currently {techList.Count})")
+        If techList.Count > TechConstants.MAX_TECHS Then
+            errors.Add($"Maximum of {TechConstants.MAX_TECHS} technologies allowed (currently {techList.Count})")
         End If
 
-        ' Check for duplicate IDs
-        Dim ids As New List(Of String)
-        For Each tech In techList.Values
-            If ids.Contains(tech.ID) Then
-                errors.Add($"Duplicate Tech ID: {tech.ID}")
-            Else
-                ids.Add(tech.ID)
+        ' Dictionary is already keyed by ID, so duplicates can't physically exist here.
+        ' Still scan to catch the case where tech.ID disagrees with its dictionary key.
+        Dim seen As New HashSet(Of String)
+        For Each kvp In techList
+            If kvp.Key <> kvp.Value.ID Then
+                errors.Add($"Tech dictionary key '{kvp.Key}' disagrees with stored ID '{kvp.Value.ID}'")
+            End If
+            If Not seen.Add(kvp.Value.ID) Then
+                errors.Add($"Duplicate Tech ID: {kvp.Value.ID}")
             End If
         Next
 
@@ -212,34 +217,52 @@ Public Class TechValidator
             Next
         Next
 
-        ' Check for circular dependencies
-        For Each tech In techList.Values
-            If HasCircularDependency(tech, techList, New List(Of String)) Then
-                errors.Add($"Circular dependency detected involving Tech {tech.ID}")
-            End If
+        ' Global circular-dependency check using three-colour DFS (white = unvisited, gray = on stack, black = done).
+        Const WHITE As Integer = 0
+        Const GRAY As Integer = 1
+        Const BLACK As Integer = 2
+        Dim color As New Dictionary(Of String, Integer)
+        For Each id In techList.Keys
+            color(id) = WHITE
+        Next
+
+        Dim cycleReported As New HashSet(Of String)
+        For Each rootId In techList.Keys
+            If color(rootId) <> WHITE Then Continue For
+
+            Dim stack As New Stack(Of Tuple(Of String, Integer))
+            stack.Push(Tuple.Create(rootId, 0))
+            color(rootId) = GRAY
+
+            While stack.Count > 0
+                Dim top = stack.Peek()
+                Dim currentId = top.Item1
+                Dim idx = top.Item2
+                Dim prereqs = techList(currentId).Prerequisites
+
+                If idx >= prereqs.Count Then
+                    color(currentId) = BLACK
+                    stack.Pop()
+                Else
+                    Dim nextId = prereqs(idx)
+                    stack.Pop()
+                    stack.Push(Tuple.Create(currentId, idx + 1))
+
+                    If techList.ContainsKey(nextId) Then
+                        If color(nextId) = GRAY Then
+                            If cycleReported.Add(nextId) Then
+                                errors.Add($"Circular dependency detected involving Tech {nextId}")
+                            End If
+                        ElseIf color(nextId) = WHITE Then
+                            color(nextId) = GRAY
+                            stack.Push(Tuple.Create(nextId, 0))
+                        End If
+                    End If
+                End If
+            End While
         Next
 
         Return errors
-    End Function
-
-    Private Shared Function HasCircularDependency(tech As fMain.Technology,
-                                                 techList As Dictionary(Of String, fMain.Technology),
-                                                 visited As List(Of String)) As Boolean
-        If visited.Contains(tech.ID) Then
-            Return True
-        End If
-
-        visited.Add(tech.ID)
-
-        For Each prereqId In tech.Prerequisites
-            If techList.ContainsKey(prereqId) Then
-                If HasCircularDependency(techList(prereqId), techList, New List(Of String)(visited)) Then
-                    Return True
-                End If
-            End If
-        Next
-
-        Return False
     End Function
 End Class
 
@@ -267,7 +290,6 @@ Public Class TechFileGenerator
     Public Shared Function CreateBasicTechTree() As Dictionary(Of String, fMain.Technology)
         Dim techList As New Dictionary(Of String, fMain.Technology)
 
-        ' Add basic tech levels
         For level As Integer = 1 To 5
             Dim techLevelTech As New fMain.Technology() With {
                 .ID = $"{level:D2}000",
@@ -279,7 +301,6 @@ Public Class TechFileGenerator
             techList(techLevelTech.ID) = techLevelTech
         Next
 
-        ' Add sample technologies
         techList("05999") = GenerateSampleTech()
 
         Return techList
@@ -287,62 +308,40 @@ Public Class TechFileGenerator
 End Class
 
 Public Class TechImportExport
+    Private Shared Function CsvEscape(s As String) As String
+        ' Escape quotes and replace embedded CR/LF with spaces so the cell stays on one CSV line.
+        Dim escaped As String = s.Replace("""", """""")
+        escaped = escaped.Replace(vbCrLf, " ").Replace(vbLf, " ").Replace(vbCr, " ")
+        Return escaped
+    End Function
+
     Public Shared Sub ExportToCSV(techList As Dictionary(Of String, fMain.Technology), fileName As String)
         Try
             Using writer As New StreamWriter(fileName)
-                ' Header
                 writer.WriteLine("ID,Name,Category,EdenCost,PlymouthCost,MaxScientists,Lab,Teaser,Description,ImproveDesc,Prerequisites,UnitProperties")
 
-                ' Sort technologies by ID
-                Dim sortedTechs As New List(Of fMain.Technology)
-                For Each tech In techList.Values
-                    sortedTechs.Add(tech)
-                Next
-
-                ' Simple bubble sort by ID
-                For i As Integer = 0 To sortedTechs.Count - 2
-                    For j As Integer = 0 To sortedTechs.Count - 2 - i
-                        If String.Compare(sortedTechs(j).ID, sortedTechs(j + 1).ID) > 0 Then
-                            Dim temp As fMain.Technology = sortedTechs(j)
-                            sortedTechs(j) = sortedTechs(j + 1)
-                            sortedTechs(j + 1) = temp
-                        End If
-                    Next
-                Next
+                Dim sortedTechs = techList.Values.OrderBy(Function(x) x.ID).ToList()
 
                 For Each tech In sortedTechs
-                    ' Build prerequisites string
-                    Dim prereqString As String = ""
-                    For Each prereq In tech.Prerequisites
-                        If prereqString <> "" Then prereqString += ";"
-                        prereqString += prereq
-                    Next
+                    Dim prereqString As String = String.Join(";", tech.Prerequisites)
 
-                    ' Build unit properties string
-                    Dim unitPropString As String = ""
+                    Dim unitPropParts As New List(Of String)
                     For Each prop In tech.UnitProperties
-                        If unitPropString <> "" Then unitPropString += ";"
-                        unitPropString += prop.UnitType + ":" + prop.PropertyName + ":" + prop.Value
+                        unitPropParts.Add($"{prop.UnitType}:{prop.PropertyName}:{prop.Value}")
                     Next
+                    Dim unitPropString As String = String.Join(";", unitPropParts)
 
-                    ' Escape quotes in text fields
-                    Dim safeName As String = tech.Name.Replace("""", """""")
-                    Dim safeTeaser As String = tech.Teaser.Replace("""", """""")
-                    Dim safeDescription As String = tech.Description.Replace("""", """""")
-                    Dim safeImproveDesc As String = tech.ImproveDesc.Replace("""", """""")
-
-                    ' Build CSV line
                     Dim line As String = String.Format("""{0}"",""{1}"",{2},{3},{4},{5},{6},""{7}"",""{8}"",""{9}"",""{10}"",""{11}""",
                         tech.ID,
-                        safeName,
-                        tech.Category.ToString(),
-                        tech.EdenCost.ToString(),
-                        tech.PlymouthCost.ToString(),
-                        tech.MaxScientists.ToString(),
-                        tech.Lab.ToString(),
-                        safeTeaser,
-                        safeDescription,
-                        safeImproveDesc,
+                        CsvEscape(tech.Name),
+                        tech.Category,
+                        tech.EdenCost,
+                        tech.PlymouthCost,
+                        tech.MaxScientists,
+                        tech.Lab,
+                        CsvEscape(tech.Teaser),
+                        CsvEscape(tech.Description),
+                        CsvEscape(tech.ImproveDesc),
                         prereqString,
                         unitPropString)
 
@@ -357,7 +356,6 @@ Public Class TechImportExport
     Public Shared Function GetTechStatistics(techList As Dictionary(Of String, fMain.Technology)) As Dictionary(Of String, Object)
         Dim stats As New Dictionary(Of String, Object)
 
-        ' Basic counts
         Dim totalTechs As Integer = techList.Count
         Dim edenOnlyCount As Integer = 0
         Dim plymouthOnlyCount As Integer = 0
@@ -365,20 +363,16 @@ Public Class TechImportExport
         Dim freeTechsCount As Integer = 0
         Dim researchableTechsCount As Integer = 0
 
-        ' Cost totals
         Dim totalEdenCost As Integer = 0
         Dim totalPlymouthCost As Integer = 0
 
-        ' Category breakdown
         Dim categoryBreakdown As New Dictionary(Of Integer, Integer)
 
-        ' Process each technology
         For Each tech In techList.Values
-            ' Faction availability counts
             Dim isEdenAvailable As Boolean = (tech.EdenCost >= 0)
             Dim isPlymouthAvailable As Boolean = (tech.PlymouthCost >= 0)
 
-            If isEdenAvailable And isPlymouthAvailable Then
+            If isEdenAvailable AndAlso isPlymouthAvailable Then
                 bothFactionsCount += 1
             ElseIf isEdenAvailable Then
                 edenOnlyCount += 1
@@ -386,25 +380,17 @@ Public Class TechImportExport
                 plymouthOnlyCount += 1
             End If
 
-            ' Free vs researchable
-            If tech.EdenCost = 0 Or tech.PlymouthCost = 0 Then
+            If tech.EdenCost = 0 OrElse tech.PlymouthCost = 0 Then
                 freeTechsCount += 1
             End If
 
-            If tech.EdenCost > 0 Or tech.PlymouthCost > 0 Then
+            If tech.EdenCost > 0 OrElse tech.PlymouthCost > 0 Then
                 researchableTechsCount += 1
             End If
 
-            ' Cost totals
-            If tech.EdenCost > 0 Then
-                totalEdenCost += tech.EdenCost
-            End If
+            If tech.EdenCost > 0 Then totalEdenCost += tech.EdenCost
+            If tech.PlymouthCost > 0 Then totalPlymouthCost += tech.PlymouthCost
 
-            If tech.PlymouthCost > 0 Then
-                totalPlymouthCost += tech.PlymouthCost
-            End If
-
-            ' Category breakdown
             If categoryBreakdown.ContainsKey(tech.Category) Then
                 categoryBreakdown(tech.Category) += 1
             Else
@@ -412,7 +398,6 @@ Public Class TechImportExport
             End If
         Next
 
-        ' Store results
         stats("TotalTechnologies") = totalTechs
         stats("EdenOnlyTechs") = edenOnlyCount
         stats("PlymouthOnlyTechs") = plymouthOnlyCount
@@ -427,7 +412,6 @@ Public Class TechImportExport
     End Function
 End Class
 
-' Extension methods for better usability
 Public Module TechExtensions
     <System.Runtime.CompilerServices.Extension>
     Public Function GetCategoryName(categoryId As Integer) As String
@@ -453,10 +437,10 @@ Public Module TechExtensions
 
     <System.Runtime.CompilerServices.Extension>
     Public Function GetTechLevel(tech As fMain.Technology) As Integer
-        If tech.ID.Length >= 2 Then
-            Dim level As Integer
-            If Integer.TryParse(tech.ID.Substring(0, 2), level) Then
-                Return level
+        If tech.ID.Length >= 5 Then
+            Dim idNum As Integer
+            If Integer.TryParse(tech.ID, idNum) Then
+                Return idNum \ 1000
             End If
         End If
         Return 0

@@ -946,11 +946,11 @@ Partial Class fMain
         '
         Me.btnSaveTech.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.btnSaveTech.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnSaveTech.Location = New System.Drawing.Point(734, 9)
+        Me.btnSaveTech.Location = New System.Drawing.Point(724, 9)
         Me.btnSaveTech.Name = "btnSaveTech"
-        Me.btnSaveTech.Size = New System.Drawing.Size(75, 23)
+        Me.btnSaveTech.Size = New System.Drawing.Size(95, 23)
         Me.btnSaveTech.TabIndex = 0
-        Me.btnSaveTech.Text = "Save Tech"
+        Me.btnSaveTech.Text = "Apply Changes"
         Me.btnSaveTech.UseVisualStyleBackColor = True
         '
         'StatusStrip1
