@@ -3,8 +3,8 @@
 '
 ' To use in your project:
 ' 1. Copy fAbout.vb and fAbout.Designer.vb to your project
-' 2. Add a banner image resource named "banner01_620x100" (620x100 pixels)
-' 3. Set your application icon resource
+' 2. Add a banner image resource named "banner05_620x100" (620x100 pixels)
+' 3. Add your application icon resource (here "Tech_Science") and update fAbout_Load to match
 ' 4. Call: fAbout.ShowAbout("App Name", "1.0.0", "0001", Me)
 '    Or simply: Dim about As New fAbout() : about.ShowDialog(Me)
 
@@ -14,6 +14,7 @@ Imports System.Runtime.Serialization.Formatters
 Imports System.Xml
 Imports Microsoft.SqlServer.Server
 
+''' <summary>About dialog: banner, name, version, description, copyright and website link.</summary>
 Public Class fAbout
 
     ' Customizable properties - set these before showing the form
@@ -45,13 +46,14 @@ Public Class fAbout
         End Using
     End Sub
 
+    ''' <summary>Fill the dialog from the properties set by the caller.</summary>
     Private Sub fAbout_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' Set form properties
         Me.Text = "About " & ApplicationTitle
 
         ' Try to set icon from resources (customize resource name as needed)
         Try
-            Me.Icon = My.Resources.testplans
+            Me.Icon = My.Resources.Tech_Science
         Catch
             ' Icon resource not found, use default
         End Try
@@ -84,6 +86,7 @@ Public Class fAbout
         Debug.WriteLine("About Form Loaded")
     End Sub
 
+    ''' <summary>Open the website in the default browser.</summary>
     Private Sub linkWebsite_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linkWebsite.LinkClicked
         Try
             Process.Start(New ProcessStartInfo(ApplicationWebsite) With {.UseShellExecute = True})
@@ -94,6 +97,7 @@ Public Class fAbout
         End Try
     End Sub
 
+    ''' <summary>Close the dialog.</summary>
     Private Sub btnOK_Click(sender As Object, e As EventArgs) Handles btnOK.Click
         Me.Close()
     End Sub

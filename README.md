@@ -21,6 +21,33 @@ The demo techs are stored in `\OPU\maps\OfficialDemos`.
 
 Each file defines different technology progressions, costs, and availability for different game modes and factions.
 
+## Features
+
+- Open, edit and save tech tree `.txt` files, with search and category filtering
+- Edit costs per faction, prerequisites, unit property upgrades, lab level and scientists
+- Changing a Tech ID updates every `REQUIRES` that references it; deleting a tech removes those references
+- Validate a single tech or the whole tree (missing prerequisites, circular dependencies, limits)
+- Statistics, dependency view and "Find References" for any tech
+- Export to CSV
+- Civilization-style tech tree view in your web browser, with HTML export
+- Saving keeps the original file layout: comments, tech order, unknown tags (`PLAYER_PROP`, `FUNCTION_RESULT`, ...) and the checksum trailer in the stock OPU files. A `.bak` copy of the previous file is made on every save
+
+## Tech Tree View
+
+**Tools > View Tech Tree in Browser** (F5) shows the whole tech tree Civilization-style in your default web browser.
+
+- Techs are arranged left to right: each tech sits one column to the right of its deepest prerequisite
+- In the campaign files (`edentek.txt`, `ply_tek.txt`) the "Tech Level N" techs become mission bands across the top
+- Cards show the in-game category icon, research cost, lab level, scientists and number of unit upgrades. Pre-researched techs (cost 0) are green and disabled techs (cost -1) are greyed out
+- Hover a tech to highlight everything it requires (amber) and everything it leads to (blue)
+- Click a tech for its full details: costs, prerequisites, unit upgrades, teaser and description
+- Switch between Eden and Plymouth costs (shown when a file has faction-specific costs), search by name or ID, and drag to pan
+- Theme button: OP2 (the default, styled after the in-game command panel), Auto (follows your system light/dark setting), Light or Dark. The choice is remembered by your browser
+
+The view shows the tech tree as it is in the editor, including changes applied but not yet saved. Press F5 again after editing to refresh it. The page is written to `%TEMP%\OP2TechTree\` and replaced each time.
+
+**Tools > Export Tech Tree to HTML...** saves a copy you can keep next to your `.txt` file (the save dialog opens in that file's folder). The HTML file is self-contained, with no internet connection or OP2TechTree needed to open it. It is a snapshot, so export again after changing the tech tree.
+
 # Outpost 2 Tech Tree File Format
 
 ## Overview

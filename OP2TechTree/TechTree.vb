@@ -3,6 +3,7 @@
 Imports System.IO
 Imports System.Text
 
+''' <summary>Lookup tables and limits of the tech file format, shared by the form, validator and exporters.</summary>
 Public Class TechConstants
     ' Technology Categories
     Public Shared ReadOnly Categories As New Dictionary(Of Integer, String) From {
@@ -73,7 +74,9 @@ Public Class TechConstants
     Public Const MAX_TEXT_LENGTH As Integer = 800
 End Class
 
+''' <summary>Checks techs against the format rules. Returns messages; never changes anything.</summary>
 Public Class TechValidator
+    ''' <summary>Problems with one tech: ID, name, text lengths, category, costs, scientists, lab, unit properties.</summary>
     Public Shared Function ValidateTechnology(tech As fMain.Technology) As List(Of String)
         Dim errors As New List(Of String)
 
@@ -185,6 +188,7 @@ Public Class TechValidator
         Return errors
     End Function
 
+    ''' <summary>Problems across the tree: too many techs, key/ID mismatches, missing prerequisites, circular dependencies.</summary>
     Public Shared Function ValidateTechTree(techList As Dictionary(Of String, fMain.Technology)) As List(Of String)
         Dim errors As New List(Of String)
 
@@ -266,7 +270,9 @@ Public Class TechValidator
     End Function
 End Class
 
+''' <summary>Builds example content for Tools > Create Sample.</summary>
 Public Class TechFileGenerator
+    ''' <summary>One fully filled-in example tech.</summary>
     Public Shared Function GenerateSampleTech() As fMain.Technology
         Return New fMain.Technology() With {
             .ID = "05999",
@@ -287,6 +293,7 @@ Public Class TechFileGenerator
         }
     End Function
 
+    ''' <summary>Tech level markers 1-5 plus the sample tech.</summary>
     Public Shared Function CreateBasicTechTree() As Dictionary(Of String, fMain.Technology)
         Dim techList As New Dictionary(Of String, fMain.Technology)
 
@@ -307,7 +314,9 @@ Public Class TechFileGenerator
     End Function
 End Class
 
+''' <summary>CSV export and tech tree statistics.</summary>
 Public Class TechImportExport
+    ''' <summary>Make text safe inside a quoted CSV cell.</summary>
     Private Shared Function CsvEscape(s As String) As String
         ' Escape quotes and replace embedded CR/LF with spaces so the cell stays on one CSV line.
         Dim escaped As String = s.Replace("""", """""")
@@ -315,6 +324,7 @@ Public Class TechImportExport
         Return escaped
     End Function
 
+    ''' <summary>One row per tech, sorted by ID. Prerequisites and unit properties are ';'-separated in one cell.</summary>
     Public Shared Sub ExportToCSV(techList As Dictionary(Of String, fMain.Technology), fileName As String)
         Try
             Using writer As New StreamWriter(fileName)
@@ -353,6 +363,7 @@ Public Class TechImportExport
         End Try
     End Sub
 
+    ''' <summary>Counts and totals for Tools > Statistics.</summary>
     Public Shared Function GetTechStatistics(techList As Dictionary(Of String, fMain.Technology)) As Dictionary(Of String, Object)
         Dim stats As New Dictionary(Of String, Object)
 
@@ -412,7 +423,79 @@ Public Class TechImportExport
     End Function
 End Class
 
+''' <summary>Renders the tech tree as a self-contained, Civilization-style HTML page
+''' (embedded template Resources\techtree_template.html + tech data + category icons).</summary>
+Public Class TechTreeHtmlExporter
+    Private Const TemplateResourceName As String = "OP2TechTree.techtree_template.html"
+
+    ''' <summary>The finished page: template with the title, the techs as JSON and the category icons filled in.</summary>
+    Public Shared Function BuildHtml(techList As Dictionary(Of String, fMain.Technology),
+                                     techOrder As List(Of String), title As String) As String
+        Dim template As String
+        Using stream = GetType(TechTreeHtmlExporter).Assembly.GetManifestResourceStream(TemplateResourceName)
+            If stream Is Nothing Then Throw New InvalidOperationException("Tech tree HTML template resource is missing.")
+            Using reader As New StreamReader(stream, Encoding.UTF8)
+                template = reader.ReadToEnd()
+            End Using
+        End Using
+
+        ' File order first, then techs added since load (same order Save uses).
+        Dim ordered As New List(Of fMain.Technology)
+        For Each id In techOrder
+            If techList.ContainsKey(id) Then ordered.Add(techList(id))
+        Next
+        ordered.AddRange(techList.Values.Where(Function(t) Not techOrder.Contains(t.ID)).OrderBy(Function(t) t.ID))
+
+        Dim techs As New List(Of Dictionary(Of String, Object))
+        For Each tech In ordered
+            techs.Add(New Dictionary(Of String, Object) From {
+                {"id", tech.ID}, {"name", tech.Name}, {"cat", tech.Category},
+                {"eden", tech.EdenCost}, {"ply", tech.PlymouthCost},
+                {"sci", tech.MaxScientists}, {"lab", tech.Lab},
+                {"desc", tech.Description}, {"teaser", tech.Teaser}, {"improve", tech.ImproveDesc},
+                {"req", tech.Prerequisites.ToArray()},
+                {"props", tech.UnitProperties.Select(Function(p) New String() {p.UnitType, p.PropertyName, p.Value}).ToArray()}
+            })
+        Next
+
+        Dim serializer As New System.Web.Script.Serialization.JavaScriptSerializer() With {.MaxJsonLength = Integer.MaxValue}
+        Dim data As New Dictionary(Of String, Object) From {{title, techs}}
+
+        ' "</" would let tech text close the <script> block early; "<\/" is the same string in JSON.
+        Dim dataJson As String = serializer.Serialize(data).Replace("</", "<\/")
+        Dim iconsJson As String = serializer.Serialize(GetCategoryIcons())
+
+        Return template.Replace("__TITLE__", System.Net.WebUtility.HtmlEncode(title & " - Outpost 2 Tech Tree")) _
+                       .Replace("__DATA__", dataJson) _
+                       .Replace("__ICONS__", iconsJson)
+    End Function
+
+    ''' <summary>Write the page to `fileName` (UTF-8, folder created if needed).</summary>
+    Public Shared Sub Export(techList As Dictionary(Of String, fMain.Technology),
+                             techOrder As List(Of String), title As String, fileName As String)
+        Dim dir As String = Path.GetDirectoryName(fileName)
+        If Not String.IsNullOrEmpty(dir) Then Directory.CreateDirectory(dir)
+        File.WriteAllText(fileName, BuildHtml(techList, techOrder, title), New UTF8Encoding(False))
+    End Sub
+
+    ''' <summary>Category number → PNG data URI of the in-game research icon (categories 1-12).</summary>
+    Private Shared Function GetCategoryIcons() As Dictionary(Of String, String)
+        Dim icons As New Dictionary(Of String, String)
+        For category As Integer = 1 To 12
+            Dim bmp = TryCast(My.Resources.ResourceManager.GetObject("icon" & category), System.Drawing.Image)
+            If bmp Is Nothing Then Continue For
+            Using ms As New MemoryStream()
+                bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png)
+                icons(category.ToString()) = "data:image/png;base64," & Convert.ToBase64String(ms.ToArray())
+            End Using
+        Next
+        Return icons
+    End Function
+End Class
+
+''' <summary>Small helpers usable as extension methods.</summary>
 Public Module TechExtensions
+    ''' <summary>Category name for a category number.</summary>
     <System.Runtime.CompilerServices.Extension>
     Public Function GetCategoryName(categoryId As Integer) As String
         If TechConstants.Categories.ContainsKey(categoryId) Then
@@ -421,6 +504,7 @@ Public Module TechExtensions
         Return $"Unknown Category {categoryId}"
     End Function
 
+    ''' <summary>Lab name for a lab level.</summary>
     <System.Runtime.CompilerServices.Extension>
     Public Function GetLabName(labLevel As Integer) As String
         If TechConstants.LabLevels.ContainsKey(labLevel) Then
@@ -429,12 +513,14 @@ Public Module TechExtensions
         Return $"Unknown Lab Level {labLevel}"
     End Function
 
+    ''' <summary>True for a five-digit tech ID.</summary>
     <System.Runtime.CompilerServices.Extension>
     Public Function IsValidTechId(techId As String) As Boolean
         Return Not String.IsNullOrEmpty(techId) AndAlso
                System.Text.RegularExpressions.Regex.IsMatch(techId, TechConstants.TechIdPattern)
     End Function
 
+    ''' <summary>Tech level of a tech: ID \ 1000 (0 if the ID isn't a number).</summary>
     <System.Runtime.CompilerServices.Extension>
     Public Function GetTechLevel(tech As fMain.Technology) As Integer
         If tech.ID.Length >= 5 Then

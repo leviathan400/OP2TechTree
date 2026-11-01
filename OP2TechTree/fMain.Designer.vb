@@ -29,6 +29,7 @@ Partial Class fMain
         Me.OpenToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.SaveToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.SaveAsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.CloseToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripSeparator1 = New System.Windows.Forms.ToolStripSeparator()
         Me.ExitToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.EditToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -41,6 +42,8 @@ Partial Class fMain
         Me.StatisticsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripSeparator2 = New System.Windows.Forms.ToolStripSeparator()
         Me.ExportToCSVToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ViewTechTreeToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ExportToHTMLToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.CreateSampleToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ShowDependenciesToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.HelpToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -89,6 +92,13 @@ Partial Class fMain
         Me.txtTechID = New System.Windows.Forms.TextBox()
         Me.Label8 = New System.Windows.Forms.Label()
         Me.TabPage2 = New System.Windows.Forms.TabPage()
+        Me.TabPage3 = New System.Windows.Forms.TabPage()
+        Me.tlpDependencies = New System.Windows.Forms.TableLayoutPanel()
+        Me.grpRequires = New System.Windows.Forms.GroupBox()
+        Me.tvRequires = New System.Windows.Forms.TreeView()
+        Me.grpRequiredBy = New System.Windows.Forms.GroupBox()
+        Me.tvRequiredBy = New System.Windows.Forms.TreeView()
+        Me.lblDependencyHint = New System.Windows.Forms.Label()
         Me.GroupBox7 = New System.Windows.Forms.GroupBox()
         Me.cmbUnitProperty = New System.Windows.Forms.ComboBox()
         Me.btnRemoveUnitProp = New System.Windows.Forms.Button()
@@ -132,6 +142,10 @@ Partial Class fMain
         Me.GroupBox2.SuspendLayout()
         Me.TabPage2.SuspendLayout()
         Me.GroupBox7.SuspendLayout()
+        Me.TabPage3.SuspendLayout()
+        Me.tlpDependencies.SuspendLayout()
+        Me.grpRequires.SuspendLayout()
+        Me.grpRequiredBy.SuspendLayout()
         Me.Panel1.SuspendLayout()
         Me.StatusStrip1.SuspendLayout()
         Me.SuspendLayout()
@@ -147,7 +161,7 @@ Partial Class fMain
         '
         'FileToolStripMenuItem
         '
-        Me.FileToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewToolStripMenuItem, Me.OpenToolStripMenuItem, Me.SaveToolStripMenuItem, Me.SaveAsToolStripMenuItem, Me.ToolStripSeparator1, Me.ExitToolStripMenuItem})
+        Me.FileToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewToolStripMenuItem, Me.OpenToolStripMenuItem, Me.CloseToolStripMenuItem, Me.SaveToolStripMenuItem, Me.SaveAsToolStripMenuItem, Me.ToolStripSeparator1, Me.ExitToolStripMenuItem})
         Me.FileToolStripMenuItem.Name = "FileToolStripMenuItem"
         Me.FileToolStripMenuItem.Size = New System.Drawing.Size(37, 20)
         Me.FileToolStripMenuItem.Text = "&File"
@@ -178,6 +192,13 @@ Partial Class fMain
         Me.SaveAsToolStripMenuItem.Name = "SaveAsToolStripMenuItem"
         Me.SaveAsToolStripMenuItem.Size = New System.Drawing.Size(180, 22)
         Me.SaveAsToolStripMenuItem.Text = "Save &As..."
+        '
+        'CloseToolStripMenuItem
+        '
+        Me.CloseToolStripMenuItem.Name = "CloseToolStripMenuItem"
+        Me.CloseToolStripMenuItem.ShortcutKeys = CType((System.Windows.Forms.Keys.Control Or System.Windows.Forms.Keys.W), System.Windows.Forms.Keys)
+        Me.CloseToolStripMenuItem.Size = New System.Drawing.Size(180, 22)
+        Me.CloseToolStripMenuItem.Text = "&Close Tech Tree"
         '
         'ToolStripSeparator1
         '
@@ -220,7 +241,7 @@ Partial Class fMain
         '
         'ToolsToolStripMenuItem
         '
-        Me.ToolsToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ValidateCurrentTechToolStripMenuItem, Me.ValidateTechTreeToolStripMenuItem, Me.StatisticsToolStripMenuItem, Me.ToolStripSeparator2, Me.ExportToCSVToolStripMenuItem, Me.CreateSampleToolStripMenuItem, Me.ShowDependenciesToolStripMenuItem})
+        Me.ToolsToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ValidateCurrentTechToolStripMenuItem, Me.ValidateTechTreeToolStripMenuItem, Me.StatisticsToolStripMenuItem, Me.ToolStripSeparator2, Me.ViewTechTreeToolStripMenuItem, Me.ExportToHTMLToolStripMenuItem, Me.ExportToCSVToolStripMenuItem, Me.CreateSampleToolStripMenuItem, Me.ShowDependenciesToolStripMenuItem})
         Me.ToolsToolStripMenuItem.Name = "ToolsToolStripMenuItem"
         Me.ToolsToolStripMenuItem.Size = New System.Drawing.Size(46, 20)
         Me.ToolsToolStripMenuItem.Text = "&Tools"
@@ -253,6 +274,19 @@ Partial Class fMain
         Me.ExportToCSVToolStripMenuItem.Name = "ExportToCSVToolStripMenuItem"
         Me.ExportToCSVToolStripMenuItem.Size = New System.Drawing.Size(185, 22)
         Me.ExportToCSVToolStripMenuItem.Text = "&Export to CSV..."
+        '
+        'ViewTechTreeToolStripMenuItem
+        '
+        Me.ViewTechTreeToolStripMenuItem.Name = "ViewTechTreeToolStripMenuItem"
+        Me.ViewTechTreeToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5
+        Me.ViewTechTreeToolStripMenuItem.Size = New System.Drawing.Size(185, 22)
+        Me.ViewTechTreeToolStripMenuItem.Text = "View Tech Tree in &Browser"
+        '
+        'ExportToHTMLToolStripMenuItem
+        '
+        Me.ExportToHTMLToolStripMenuItem.Name = "ExportToHTMLToolStripMenuItem"
+        Me.ExportToHTMLToolStripMenuItem.Size = New System.Drawing.Size(185, 22)
+        Me.ExportToHTMLToolStripMenuItem.Text = "Export Tech Tree to &HTML..."
         '
         'CreateSampleToolStripMenuItem
         '
@@ -377,6 +411,7 @@ Partial Class fMain
         '
         Me.TabControl1.Controls.Add(Me.TabPage1)
         Me.TabControl1.Controls.Add(Me.TabPage2)
+        Me.TabControl1.Controls.Add(Me.TabPage3)
         Me.TabControl1.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TabControl1.Location = New System.Drawing.Point(0, 0)
         Me.TabControl1.Name = "TabControl1"
@@ -768,6 +803,86 @@ Partial Class fMain
         Me.TabPage2.Text = "Unit Properties"
         Me.TabPage2.UseVisualStyleBackColor = True
         '
+        'TabPage3
+        '
+        Me.TabPage3.Controls.Add(Me.tlpDependencies)
+        Me.TabPage3.Location = New System.Drawing.Point(4, 22)
+        Me.TabPage3.Name = "TabPage3"
+        Me.TabPage3.Padding = New System.Windows.Forms.Padding(3)
+        Me.TabPage3.Size = New System.Drawing.Size(888, 538)
+        Me.TabPage3.TabIndex = 2
+        Me.TabPage3.Text = "Dependencies"
+        Me.TabPage3.UseVisualStyleBackColor = True
+        '
+        'tlpDependencies
+        '
+        Me.tlpDependencies.ColumnCount = 2
+        Me.tlpDependencies.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
+        Me.tlpDependencies.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
+        Me.tlpDependencies.Controls.Add(Me.grpRequires, 0, 0)
+        Me.tlpDependencies.Controls.Add(Me.grpRequiredBy, 1, 0)
+        Me.tlpDependencies.Controls.Add(Me.lblDependencyHint, 0, 1)
+        Me.tlpDependencies.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.tlpDependencies.Location = New System.Drawing.Point(3, 3)
+        Me.tlpDependencies.Name = "tlpDependencies"
+        Me.tlpDependencies.RowCount = 2
+        Me.tlpDependencies.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.tlpDependencies.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24.0!))
+        Me.tlpDependencies.Size = New System.Drawing.Size(882, 532)
+        Me.tlpDependencies.TabIndex = 0
+        '
+        'grpRequires
+        '
+        Me.grpRequires.Controls.Add(Me.tvRequires)
+        Me.grpRequires.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.grpRequires.Location = New System.Drawing.Point(3, 3)
+        Me.grpRequires.Name = "grpRequires"
+        Me.grpRequires.Size = New System.Drawing.Size(435, 502)
+        Me.grpRequires.TabIndex = 0
+        Me.grpRequires.TabStop = False
+        Me.grpRequires.Text = "Requires"
+        '
+        'tvRequires
+        '
+        Me.tvRequires.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.tvRequires.HideSelection = False
+        Me.tvRequires.Location = New System.Drawing.Point(3, 16)
+        Me.tvRequires.Name = "tvRequires"
+        Me.tvRequires.Size = New System.Drawing.Size(429, 483)
+        Me.tvRequires.TabIndex = 0
+        '
+        'grpRequiredBy
+        '
+        Me.grpRequiredBy.Controls.Add(Me.tvRequiredBy)
+        Me.grpRequiredBy.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.grpRequiredBy.Location = New System.Drawing.Point(444, 3)
+        Me.grpRequiredBy.Name = "grpRequiredBy"
+        Me.grpRequiredBy.Size = New System.Drawing.Size(435, 502)
+        Me.grpRequiredBy.TabIndex = 1
+        Me.grpRequiredBy.TabStop = False
+        Me.grpRequiredBy.Text = "Required by"
+        '
+        'tvRequiredBy
+        '
+        Me.tvRequiredBy.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.tvRequiredBy.HideSelection = False
+        Me.tvRequiredBy.Location = New System.Drawing.Point(3, 16)
+        Me.tvRequiredBy.Name = "tvRequiredBy"
+        Me.tvRequiredBy.Size = New System.Drawing.Size(429, 483)
+        Me.tvRequiredBy.TabIndex = 0
+        '
+        'lblDependencyHint
+        '
+        Me.lblDependencyHint.AutoSize = True
+        Me.tlpDependencies.SetColumnSpan(Me.lblDependencyHint, 2)
+        Me.lblDependencyHint.ForeColor = System.Drawing.SystemColors.GrayText
+        Me.lblDependencyHint.Location = New System.Drawing.Point(3, 513)
+        Me.lblDependencyHint.Margin = New System.Windows.Forms.Padding(3, 5, 3, 0)
+        Me.lblDependencyHint.Name = "lblDependencyHint"
+        Me.lblDependencyHint.Size = New System.Drawing.Size(300, 13)
+        Me.lblDependencyHint.TabIndex = 2
+        Me.lblDependencyHint.Text = "Expand a tech to follow the chain. Double-click a tech to open it."
+        '
         'GroupBox7
         '
         Me.GroupBox7.Controls.Add(Me.cmbUnitProperty)
@@ -1039,6 +1154,11 @@ Partial Class fMain
         Me.TabPage2.ResumeLayout(False)
         Me.GroupBox7.ResumeLayout(False)
         Me.GroupBox7.PerformLayout()
+        Me.TabPage3.ResumeLayout(False)
+        Me.tlpDependencies.ResumeLayout(False)
+        Me.tlpDependencies.PerformLayout()
+        Me.grpRequires.ResumeLayout(False)
+        Me.grpRequiredBy.ResumeLayout(False)
         Me.Panel1.ResumeLayout(False)
         Me.StatusStrip1.ResumeLayout(False)
         Me.StatusStrip1.PerformLayout()
@@ -1053,6 +1173,7 @@ Partial Class fMain
     Friend WithEvents OpenToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents SaveToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents SaveAsToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents CloseToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ToolStripSeparator1 As ToolStripSeparator
     Friend WithEvents ExitToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents EditToolStripMenuItem As ToolStripMenuItem
@@ -1067,6 +1188,8 @@ Partial Class fMain
     Friend WithEvents StatisticsToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ToolStripSeparator2 As ToolStripSeparator
     Friend WithEvents ExportToCSVToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ViewTechTreeToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ExportToHTMLToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents CreateSampleToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ShowDependenciesToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents SplitContainer1 As SplitContainer
@@ -1113,6 +1236,13 @@ Partial Class fMain
     Friend WithEvents txtTechID As TextBox
     Friend WithEvents Label8 As Label
     Friend WithEvents TabPage2 As TabPage
+    Friend WithEvents TabPage3 As TabPage
+    Friend WithEvents tlpDependencies As TableLayoutPanel
+    Friend WithEvents grpRequires As GroupBox
+    Friend WithEvents tvRequires As TreeView
+    Friend WithEvents grpRequiredBy As GroupBox
+    Friend WithEvents tvRequiredBy As TreeView
+    Friend WithEvents lblDependencyHint As Label
     Friend WithEvents GroupBox7 As GroupBox
     Friend WithEvents btnRemoveUnitProp As Button
     Friend WithEvents btnAddUnitProp As Button

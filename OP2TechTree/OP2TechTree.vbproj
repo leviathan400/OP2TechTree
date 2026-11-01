@@ -48,7 +48,7 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Resources\testplans.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\Tech_Science.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -61,6 +61,7 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
     <Import Include="Microsoft.VisualBasic" />
@@ -108,6 +109,9 @@
     <Compile Include="TechTree.vb" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Resources\techtree_template.html">
+      <LogicalName>OP2TechTree.techtree_template.html</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="fMain.resx">
       <DependentUpon>fMain.vb</DependentUpon>
     </EmbeddedResource>
@@ -134,7 +138,7 @@
     <None Include="Resources\lab_3.WAV" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\testplans.ico" />
+    <None Include="Resources\Tech_Science.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\icon1.bmp" />

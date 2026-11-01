@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en" data-theme="op2">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<script>
+  // OP2 is the default (set on <html>); apply a saved choice before first paint.
+  // Storage can be unavailable (private window, file:// policies) - then the default stays.
+  try {
+    const t = localStorage.getItem("op2techtree-theme");
+    if (t === "auto") delete document.documentElement.dataset.theme;
+    else if (t === "light" || t === "dark" || t === "op2") document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<style>
+  /* Themes via data-theme on <html>: "op2" (the default), "light", "dark", or none = Auto,
+     where these :root colours (dark) apply and switch to light with the system setting. */
+  :root {
+    color-scheme: dark;
+    --bg: #0b1118; --panel: #121b26; --panel2: #18232f; --line: #2a3a4c;
+    --text: #d7e3ee; --muted: #7f93a8; --accent: #4fc3f7; --on-accent: #04121c;
+    --free: #6bcb77; --free-bg: #13221a; --free-line: #24402d; --disabled: #555;
+    --edge: #35506b; --edge-hi: #4fc3f7; --edge-lo: #ffd166; --match: #ffffff;
+    --era-line: #1f2c3a; --era-band: rgba(255,255,255,.012); --noicon: #1b2633; --row-line: #1d2a37;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+      color-scheme: light;
+      --bg: #eef2f6; --panel: #ffffff; --panel2: #f3f6f9; --line: #c9d3dd;
+      --text: #17222d; --muted: #5b6b7b; --accent: #0277bd; --on-accent: #ffffff;
+      --free: #2e8b47; --free-bg: #eaf6ee; --free-line: #a8d5b5; --disabled: #9aa5b1;
+      --edge: #a9b7c6; --edge-hi: #0277bd; --edge-lo: #c77800; --match: #17222d;
+      --era-line: #c9d3dd; --era-band: rgba(0,0,0,.025); --noicon: #e3e9ef; --row-line: #e3e9ef;
+    }
+  }
+  /* OP2: the in-game command panel. Black panels, phosphor-green text and frames, red bevelled
+     buttons (ASSIGN / STOP), silver window bar, terrain orange for "requires" paths. */
+  :root[data-theme="op2"] {
+    color-scheme: dark;
+    --font: Tahoma, Verdana, "Segoe UI", sans-serif;
+    --bg: #000000; --panel: #020602; --panel2: #000000; --line: #1c5c1c;
+    --text: #48e848; --muted: #2a9a2a; --accent: #00ff00; --on-accent: #000000;
+    --free: #00ff00; --free-bg: #021402; --free-line: #157015; --disabled: #3a3a3a;
+    --edge: #164416; --edge-hi: #00ff00; --edge-lo: #ff8c1a; --match: #ffffff;
+    --era-line: #0e3a0e; --era-band: rgba(0,255,0,.025); --noicon: #041004; --row-line: #0b2a0b;
+    --op2-red: #ff2a2a; --op2-red-dim: #7a1010; --op2-silver: #c0c0c0;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #eef2f6; --panel: #ffffff; --panel2: #f3f6f9; --line: #c9d3dd;
+    --text: #17222d; --muted: #5b6b7b; --accent: #0277bd; --on-accent: #ffffff;
+    --free: #2e8b47; --free-bg: #eaf6ee; --free-line: #a8d5b5; --disabled: #9aa5b1;
+    --edge: #a9b7c6; --edge-hi: #0277bd; --edge-lo: #c77800; --match: #17222d;
+    --era-line: #c9d3dd; --era-band: rgba(0,0,0,.025); --noicon: #e3e9ef; --row-line: #e3e9ef;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 13px/1.35 var(--font, "Segoe UI", system-ui, sans-serif); }
+  header { display: flex; gap: 12px; align-items: center; padding: 10px 16px;
+    background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0 8px 0 0; letter-spacing: .04em; color: var(--accent); }
+  select, input { background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 4px; padding: 5px 8px; font: inherit; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .seg button { background: var(--panel2); color: var(--muted); border: 0; padding: 5px 12px; font: inherit; cursor: pointer; }
+  .seg button.on { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+  #theme { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 4px;
+    padding: 5px 10px; font: inherit; cursor: pointer; white-space: nowrap; }
+  #theme:hover { border-color: var(--accent); }
+  .legend { margin-left: auto; color: var(--muted); display: flex; gap: 14px; font-size: 12px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  #wrap { display: flex; height: calc(100% - 50px); }
+  #viewport { flex: 1; overflow: auto; position: relative; cursor: grab; }
+  #viewport.drag { cursor: grabbing; }
+  #canvas { position: relative; }
+  svg#edges { position: absolute; left: 0; top: 0; pointer-events: none; }
+  .era { position: absolute; top: 0; border-left: 1px dashed var(--era-line); }
+  .era span { position: sticky; top: 0; display: block; padding: 6px 10px; font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); background: linear-gradient(var(--bg) 70%, transparent); }
+  .era:nth-child(odd) { background: var(--era-band); }
+  .node { position: absolute; width: 214px; height: 58px; display: flex; gap: 8px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--cat);
+    border-radius: 6px; padding: 5px 8px 5px 5px; cursor: pointer; transition: opacity .12s, border-color .12s, transform .12s; }
+  .node img { width: 45px; height: 45px; border-radius: 3px; flex: none; image-rendering: pixelated; background: #000; }
+  .node .noicon { width: 45px; height: 45px; border-radius: 3px; flex: none; background: var(--noicon);
+    display: grid; place-items: center; color: var(--muted); font-size: 10px; }
+  .node .t { min-width: 0; flex: 1; }
+  .node .n { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node .m { color: var(--muted); font-size: 11px; display: flex; gap: 8px; margin-top: 2px; }
+  .node .lab { letter-spacing: 1px; color: var(--accent); }
+  .node.free { background: var(--free-bg); border-color: var(--free-line); }
+  .node.free .n::after { content: " ✓"; color: var(--free); }
+  .node.disabled { opacity: .28; filter: grayscale(1); }
+  .node:hover, .node.sel { border-color: var(--accent); transform: translateY(-1px); }
+  .dim .node:not(.hl) { opacity: .18; }
+  .node.hl.anc { box-shadow: 0 0 0 1px var(--edge-lo); }
+  .node.hl.desc { box-shadow: 0 0 0 1px var(--edge-hi); }
+  .node.match { box-shadow: 0 0 0 2px var(--match); }
+  path.e { fill: none; stroke: var(--edge); stroke-width: 1.5; }
+  path.e.anc { stroke: var(--edge-lo); stroke-width: 2.4; }
+  path.e.desc { stroke: var(--edge-hi); stroke-width: 2.4; }
+  .dim path.e:not(.anc):not(.desc) { opacity: .15; }
+  aside { width: 340px; background: var(--panel); border-left: 1px solid var(--line); overflow: auto; padding: 14px 16px; flex: none; }
+  aside h2 { margin: 0 0 4px; font-size: 16px; }
+  aside .id { color: var(--muted); font-family: Consolas, monospace; }
+  aside h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 14px 0 4px; }
+  aside p { margin: 0; white-space: pre-line; }
+  aside table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  aside td { padding: 2px 4px; border-bottom: 1px solid var(--row-line); }
+  aside .chip { display: inline-block; padding: 1px 6px; border-radius: 3px; background: var(--panel2); margin: 0 4px 4px 0; cursor: pointer; }
+  aside .chip:hover { background: var(--line); }
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 2px 8px; }
+  .kv b { color: var(--muted); font-weight: 400; }
+  .empty { color: var(--muted); }
+
+  /* ---- OP2 theme details (beyond colours) ---- */
+  [data-theme="op2"] body { font-size: 12px; }
+  [data-theme="op2"] header { background: linear-gradient(#dcdcdc, #a8a8a8); border-bottom: 2px solid #404040;
+    box-shadow: inset 0 1px 0 #fff; color: #000; }
+  [data-theme="op2"] header h1 { color: #00c000; font-weight: 700; letter-spacing: .08em; }
+  [data-theme="op2"] .legend { color: #202020; }
+  [data-theme="op2"] #wrap { border: 3px solid var(--op2-silver); border-top: 0;
+    box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #404040; }
+  [data-theme="op2"] #viewport { border-right: 3px solid var(--op2-silver); }
+  [data-theme="op2"] select, [data-theme="op2"] input { background: #000; color: var(--text); border: 2px inset #808080; border-radius: 0; }
+  /* Buttons styled like the in-game ASSIGN / STOP buttons */
+  [data-theme="op2"] .seg { border: 0; gap: 4px; overflow: visible; }
+  [data-theme="op2"] .seg button, [data-theme="op2"] #theme {
+    background: #000; color: var(--op2-red); border: 1px solid var(--op2-red-dim); border-radius: 0;
+    box-shadow: inset 1px 1px 0 #3a0000, inset -1px -1px 0 #3a0000; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
+  [data-theme="op2"] .seg button.on { background: #2a0000; color: #ff6a6a; border-color: var(--op2-red); font-weight: 700; }
+  [data-theme="op2"] #theme:hover, [data-theme="op2"] .seg button:hover { border-color: var(--op2-red); }
+  /* Cards like the command panel's research boxes: square, thin green frame, faint glow */
+  [data-theme="op2"] .node { border-radius: 0; border: 1px solid var(--line); border-left: 3px solid var(--cat);
+    box-shadow: inset 0 0 8px rgba(0,255,0,.08); }
+  [data-theme="op2"] .node img { border: 1px solid #1f8a1f; border-radius: 2px; box-shadow: 0 0 4px rgba(0,255,0,.35); }
+  [data-theme="op2"] .node .n { color: #00ff00; font-weight: 700; }
+  [data-theme="op2"] .node .m { color: #3cc43c; }
+  [data-theme="op2"] .node .lab { color: #00ff00; }
+  [data-theme="op2"] .node:hover, [data-theme="op2"] .node.sel { border-color: #00ff00; box-shadow: 0 0 6px rgba(0,255,0,.45); transform: none; }
+  [data-theme="op2"] .era span { color: #00c000; font-weight: 700; }
+  [data-theme="op2"] aside { border-left: 0; }
+  [data-theme="op2"] aside h2 { color: #00ff00; }
+  [data-theme="op2"] aside h3 { color: #00c000; }
+  [data-theme="op2"] aside .chip { border: 1px solid var(--line); border-radius: 0; background: #000; }
+  [data-theme="op2"] aside .chip:hover { border-color: #00ff00; background: #021402; }
+  [data-theme="op2"] * { scrollbar-color: #1f7a1f #000; }
+</style>
+</head>
+<body>
+<header>
+  <h1>OUTPOST 2 TECH TREE</h1>
+  <select id="file"></select>
+  <div class="seg" id="faction"><button data-f="eden" class="on">Eden</button><button data-f="ply">Plymouth</button></div>
+  <input id="q" placeholder="Search techs…" size="22">
+  <div class="legend">
+    <span><i style="background:var(--free)"></i>Pre-researched (cost 0)</span>
+    <span><i style="background:var(--disabled)"></i>Disabled (cost -1)</span>
+    <span><i style="background:var(--edge-lo)"></i>Requires</span>
+    <span><i style="background:var(--edge-hi)"></i>Unlocks</span>
+  </div>
+  <button id="theme" type="button" title="Switch theme: Outpost 2, follow your system, light or dark"></button>
+</header>
+<div id="wrap">
+  <div id="viewport"><div id="canvas"><svg id="edges"></svg></div></div>
+  <aside id="info"><p class="empty">Hover a tech to trace its path. Click for details.</p></aside>
+</div>
+<script>
+// Filled in by OP2TechTree (TechTreeHtmlExporter): { "<file name>": [tech, ...] } and { "<category>": "data:image/png;base64,..." }
+const DATA = __DATA__;
+const ICONS = __ICONS__;
+// HTML-escape tech text before it goes into innerHTML (names and descriptions come from the file).
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Category names and card stripe colours by CATEGORY number, lab names by LAB level.
+const CATS =["Free","Database Recovery","Infrastructure","Power","Vehicles & Robotics","Food","Mining & Metals","Weapons","Space Program","Morale","Disasters","Medical & Emergency","Starship"];
+const CAT_COLORS = ["#556","#8e7cc3","#9aa5b1","#ffd166","#4fc3f7","#6bcb77","#c08552","#ef476f","#a0c4ff","#f78fb3","#d4a373","#ff6b6b","#b388ff"];
+const LABS = ["", "Basic", "Standard", "Advanced"];
+// Card size and spacing in pixels (must match .node width/height in the CSS).
+const NODE_W = 214, NODE_H = 58, COL_GAP = 70, ROW_GAP = 12, TOP = 34, LEFT = 20;
+
+// Shown file, faction whose costs the cards show, and the clicked (selected) tech ID.
+let state = { file: Object.keys(DATA)[0], faction: "eden", sel: null };
+const $ = s => document.querySelector(s);
+
+// ---- Header controls ------------------------------------------------------
+
+const fileSel = $("#file");
+for (const f of Object.keys(DATA)) fileSel.add(new Option(f, f));
+fileSel.onchange = () => { state.file = fileSel.value; state.sel = null; render(); };
+// Only offer what's meaningful: one file needs no picker, identical costs need no faction toggle.
+const hasFactionCosts = () => DATA[state.file].some(t => t.eden !== t.ply);
+if (Object.keys(DATA).length < 2) fileSel.style.display = "none";
+document.querySelector("h1").textContent = "OUTPOST 2 TECH TREE · " + state.file;
+document.querySelectorAll("#faction button").forEach(b => b.onclick = () => {
+  state.faction = b.dataset.f;
+  document.querySelectorAll("#faction button").forEach(x => x.classList.toggle("on", x === b));
+  render();
+});
+$("#q").oninput = () => applySearch();
+
+// Theme toggle: OP2 (default) -> Auto (system) -> Light -> Dark. The choice is remembered per browser.
+const THEMES = ["op2", "auto", "light", "dark"];
+const THEME_LABELS = { auto: "◐ Theme: Auto", light: "☀ Theme: Light", dark: "☾ Theme: Dark", op2: "▣ Theme: OP2" };
+const themeBtn = $("#theme");
+const currentTheme = () => document.documentElement.dataset.theme || "auto";
+const showTheme = () => { themeBtn.textContent = THEME_LABELS[currentTheme()]; };
+themeBtn.onclick = () => {
+  const next = THEMES[(THEMES.indexOf(currentTheme()) + 1) % THEMES.length];
+  if (next === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("op2techtree-theme", next); } catch (e) {}
+  showTheme();
+};
+showTheme();
+
+// "Tech Level N" techs of the campaign files (ID xx000, free, no prerequisites): drawn as era bands, not cards.
+const isMarker = t => /000$/.test(t.id) && t.req.length === 0 && t.eden === 0 && t.ply === 0 && /Tech Level/i.test(t.name);
+// Cost for the faction picked in the header (-1 disabled, 0 free).
+const cost = t => state.faction === "eden" ? t.eden : t.ply;
+
+// ---- Layout -------------------------------------------------------------
+// Column = 1 + deepest prerequisite column. "Tech Level N" marker techs become
+// era bands: everything that requires a marker starts at or after that era's first column.
+function layout(techs) {
+  const byId = new Map(techs.map(t => [t.id, t]));
+  const markers = techs.filter(isMarker).sort((a, b) => a.id.localeCompare(b.id));
+  const nodes = techs.filter(t => !isMarker(t));
+  const eraOf = new Map();       // marker id -> era index
+  markers.forEach((m, i) => eraOf.set(m.id, i));
+
+  // era of a node = max era of any marker it (transitively) needs
+  const era = new Map();
+  const eraFor = (t, stack = new Set()) => {
+    if (era.has(t.id)) return era.get(t.id);
+    stack.add(t.id);
+    let e = 0;
+    for (const p of t.req) {
+      if (eraOf.has(p)) e = Math.max(e, eraOf.get(p));
+      else if (byId.has(p) && !stack.has(p)) e = Math.max(e, eraFor(byId.get(p), stack));
+    }
+    era.set(t.id, e); return e;
+  };
+  nodes.forEach(t => eraFor(t));
+
+  // local depth inside the era (ignoring marker edges)
+  const depth = new Map();
+  const depthFor = (t, stack = new Set()) => {
+    if (depth.has(t.id)) return depth.get(t.id);
+    stack.add(t.id);
+    let d = 0;
+    for (const p of t.req) {
+      const pt = byId.get(p);
+      if (!pt || isMarker(pt) || stack.has(p)) continue;
+      d = Math.max(d, era.get(p) === era.get(t.id) ? depthFor(pt, stack) + 1 : 0);
+    }
+    depth.set(t.id, d); return d;
+  };
+  nodes.forEach(t => depthFor(t));
+
+  // global column: eras laid out left to right, each as wide as its deepest chain
+  const eraCount = Math.max(1, markers.length);
+  const eraWidth = Array(eraCount).fill(1);
+  nodes.forEach(t => { const e = era.get(t.id); eraWidth[e] = Math.max(eraWidth[e], depth.get(t.id) + 1); });
+  const eraStart = []; let acc = 0;
+  for (let i = 0; i < eraCount; i++) { eraStart.push(acc); acc += eraWidth[i]; }
+  const col = new Map(nodes.map(t => [t.id, eraStart[era.get(t.id)] + depth.get(t.id)]));
+  // A tech must sit right of every real prerequisite, even across eras.
+  for (let pass = 0; pass < 20; pass++) {
+    let moved = false;
+    for (const t of nodes) for (const p of t.req) if (col.has(p) && col.get(p) >= col.get(t.id)) { col.set(t.id, col.get(p) + 1); moved = true; }
+    if (!moved) break;
+  }
+  const nCols = Math.max(...col.values(), 0) + 1;
+
+  // rows: barycentre ordering, a few down/up sweeps to cut crossings
+  const cols = Array.from({ length: nCols }, () => []);
+  nodes.forEach(t => cols[col.get(t.id)].push(t));
+  cols.forEach(c => c.sort((a, b) => a.cat - b.cat || a.id.localeCompare(b.id)));
+  const pos = new Map();
+  const index = () => cols.forEach(c => c.forEach((t, i) => pos.set(t.id, i)));
+  index();
+  const children = new Map(nodes.map(t => [t.id, []]));
+  nodes.forEach(t => t.req.forEach(p => children.has(p) && children.get(p).push(t.id)));
+  const bary = (ids, fallback) => { const v = ids.filter(i => pos.has(i)).map(i => pos.get(i)); return v.length ? v.reduce((a, b) => a + b) / v.length : fallback; };
+  for (let sweep = 0; sweep < 6; sweep++) {
+    const fwd = sweep % 2 === 0;
+    const order = fwd ? cols : [...cols].reverse();
+    for (const c of order) {
+      c.forEach((t, i) => t._b = bary(fwd ? t.req : children.get(t.id), i));
+      c.sort((a, b) => a._b - b._b);
+      c.forEach((t, i) => pos.set(t.id, i));
+    }
+  }
+  const xy = new Map();
+  cols.forEach((c, ci) => c.forEach((t, ri) => xy.set(t.id, { x: LEFT + ci * (NODE_W + COL_GAP), y: TOP + ri * (NODE_H + ROW_GAP) })));
+  const maxRows = Math.max(...cols.map(c => c.length), 1);
+  return { nodes, xy, children, markers, eraStart, eraWidth,
+           width: LEFT * 2 + nCols * (NODE_W + COL_GAP), height: TOP + maxRows * (NODE_H + ROW_GAP) + 20 };
+}
+
+// ---- Render -------------------------------------------------------------
+let L = null;   // result of layout() for the shown file
+
+// Rebuild the page for the current file and faction: era bands, connector lines, cards.
+function render() {
+  const techs = DATA[state.file];
+  $("#faction").style.display = hasFactionCosts() ? "" : "none";
+  L = layout(techs);
+  const canvas = $("#canvas"), svg = $("#edges");
+  canvas.querySelectorAll(".node,.era").forEach(n => n.remove());
+  canvas.style.width = L.width + "px"; canvas.style.height = L.height + "px";
+  svg.setAttribute("width", L.width); svg.setAttribute("height", L.height);
+
+  if (L.markers.length) L.markers.forEach((m, i) => {
+    const d = document.createElement("div"); d.className = "era";
+    d.style.left = (LEFT / 2 + L.eraStart[i] * (NODE_W + COL_GAP)) + "px";
+    d.style.width = (L.eraWidth[i] * (NODE_W + COL_GAP)) + "px"; d.style.height = L.height + "px";
+    d.innerHTML = `<span>${esc(m.name.replace(/^\d+\s*/, ""))}</span>`;
+    canvas.insertBefore(d, svg);
+  });
+
+  // One line per REQUIRES: right edge of the prerequisite to left edge of the tech, rounded elbow.
+  let paths = "";
+  for (const t of L.nodes) for (const p of t.req) {
+    if (!L.xy.has(p)) continue;
+    const a = L.xy.get(p), b = L.xy.get(t.id);
+    const x1 = a.x + NODE_W, y1 = a.y + NODE_H / 2, x2 = b.x, y2 = b.y + NODE_H / 2;
+    const mx = x1 + COL_GAP / 2;   // elbow in the gutter right after the prerequisite
+    const r = Math.min(8, Math.abs(y2 - y1) / 2);
+    const s = Math.sign(y2 - y1);
+    const d = s === 0 ? `M${x1},${y1}H${x2}`
+      : `M${x1},${y1}H${mx - r}Q${mx},${y1} ${mx},${y1 + s * r}V${y2 - s * r}Q${mx},${y2} ${mx + r},${y2}H${x2}`;
+    paths += `<path class="e" data-from="${p}" data-to="${t.id}" d="${d}"/>`;
+  }
+  svg.innerHTML = paths;
+
+  // Cards: icon, name, cost, lab level, scientists, number of unit upgrades.
+  for (const t of L.nodes) {
+    const { x, y } = L.xy.get(t.id), c = cost(t);
+    const el = document.createElement("div");
+    el.className = "node" + (c === 0 ? " free" : "") + (c < 0 ? " disabled" : "");
+    el.dataset.id = t.id;
+    el.style.left = x + "px"; el.style.top = y + "px";
+    el.style.setProperty("--cat", CAT_COLORS[t.cat] || "#556");
+    const icon = ICONS[t.cat] ? `<img src="${ICONS[t.cat]}" alt="">` : `<div class="noicon">${esc(t.id)}</div>`;
+    const costTxt = c < 0 ? "Disabled" : c === 0 ? "Free" : c.toLocaleString();
+    el.innerHTML = `${icon}<div class="t"><div class="n" title="${esc(t.name)}">${esc(t.name)}</div>
+      <div class="m"><span>${costTxt}</span>${t.lab ? `<span class="lab" title="${LABS[t.lab]} Lab">${"▮".repeat(t.lab)}</span>` : ""}
+      ${t.sci ? `<span>👥${t.sci}</span>` : ""}${t.props.length ? `<span title="Unit upgrades">⬆${t.props.length}</span>` : ""}</div></div>`;
+    el.onmouseenter = () => highlight(t.id);
+    el.onmouseleave = () => highlight(state.sel);
+    el.onclick = () => { state.sel = t.id; showInfo(t); highlight(t.id); };
+    canvas.appendChild(el);
+  }
+  if (state.sel && L.xy.has(state.sel)) { showInfo(DATA[state.file].find(t => t.id === state.sel)); highlight(state.sel); }
+  else { highlight(null); $("#info").innerHTML = `<p class="empty">${L.nodes.length} techs. Hover a tech to trace its path, click for details.</p>`; }
+  applySearch();
+}
+
+// ---- Highlighting, details, search ----------------------------------------
+// Every ID reachable from `id` by repeatedly following next() (prerequisites or dependents).
+function closure(id, next) {
+  const out = new Set(), stack = [id];
+  while (stack.length) for (const n of next(stack.pop()) || []) if (!out.has(n)) { out.add(n); stack.push(n); }
+  return out;
+}
+
+// Light up a tech, everything it requires (amber) and everything it leads to (blue); dim the rest.
+// highlight(null) clears it.
+function highlight(id) {
+  const canvas = $("#canvas");
+  canvas.classList.toggle("dim", !!id);
+  canvas.querySelectorAll(".node").forEach(n => n.classList.remove("hl", "anc", "desc", "sel"));
+  canvas.querySelectorAll("path.e").forEach(p => p.classList.remove("anc", "desc"));
+  if (!id) return;
+  const byId = new Map(DATA[state.file].map(t => [t.id, t]));
+  const anc = closure(id, x => byId.get(x)?.req), desc = closure(id, x => L.children.get(x));
+  canvas.querySelectorAll(".node").forEach(n => {
+    const nid = n.dataset.id;
+    if (nid === id) n.classList.add("hl", "sel");
+    else if (anc.has(nid)) n.classList.add("hl", "anc");
+    else if (desc.has(nid)) n.classList.add("hl", "desc");
+  });
+  canvas.querySelectorAll("path.e").forEach(p => {
+    const f = p.dataset.from, t = p.dataset.to;
+    if ((t === id || anc.has(t)) && (anc.has(f))) p.classList.add("anc");
+    else if ((f === id || desc.has(f)) && desc.has(t)) p.classList.add("desc");
+  });
+}
+
+// Fill the side panel with a tech's details. The underscore rule in the game's texts becomes a paragraph break.
+function showInfo(t) {
+  const byId = new Map(DATA[state.file].map(x => [x.id, x]));
+  const fmt = v => v < 0 ? "Disabled" : v === 0 ? "Free / pre-researched" : v.toLocaleString();
+  const chip = id => `<span class="chip" data-go="${esc(id)}">${esc(id)} ${esc(byId.get(id)?.name ?? "(missing)")}</span>`;
+  const unlocks = L.children.get(t.id) || [];
+  const prose = s => esc(s).replace(/\s*_{5,}\s*/g, "\n\n");
+  $("#info").innerHTML = `
+    <h2>${esc(t.name)}</h2><div class="id">${esc(t.id)} · ${CATS[t.cat] ?? "Category " + esc(t.cat)}</div>
+    <h3>Research</h3>
+    <div class="kv"><b>Eden cost</b><span>${fmt(t.eden)}</span><b>Plymouth cost</b><span>${fmt(t.ply)}</span>
+      <b>Lab</b><span>${LABS[t.lab] || "—"}</span><b>Max scientists</b><span>${t.sci || "—"}</span></div>
+    <h3>Requires</h3>${t.req.length ? t.req.map(chip).join("") : '<span class="empty">None</span>'}
+    <h3>Leads to</h3>${unlocks.length ? unlocks.map(chip).join("") : '<span class="empty">Nothing</span>'}
+    ${t.props.length ? `<h3>Unit upgrades</h3><table>${t.props.map(p => `<tr><td>${esc(p[0])}</td><td>${esc(p[1])}</td><td style="text-align:right">${esc(p.slice(2).join(" "))}</td></tr>`).join("")}</table>` : ""}
+    ${t.improve ? `<h3>Improvement</h3><p>${esc(t.improve)}</p>` : ""}
+    ${t.teaser ? `<h3>Teaser</h3><p>${prose(t.teaser)}</p>` : ""}
+    ${t.desc ? `<h3>Description</h3><p>${prose(t.desc)}</p>` : ""}`;
+  $("#info").querySelectorAll("[data-go]").forEach(c => c.onclick = () => focusTech(c.dataset.go));
+}
+
+// Select a tech and scroll it to the middle of the view (used by the Requires / Leads to chips).
+function focusTech(id) {
+  const t = DATA[state.file].find(x => x.id === id); if (!t || !L.xy.has(id)) return;
+  state.sel = id; showInfo(t); highlight(id);
+  const { x, y } = L.xy.get(id), vp = $("#viewport");
+  vp.scrollTo({ left: x - vp.clientWidth / 2 + NODE_W / 2, top: y - vp.clientHeight / 2, behavior: "smooth" });
+}
+
+// Outline techs whose name or ID contains the search text, and scroll to the first one.
+function applySearch() {
+  const q = $("#q").value.trim().toLowerCase();
+  let first = null;
+  document.querySelectorAll(".node").forEach(n => {
+    const t = DATA[state.file].find(x => x.id === n.dataset.id);
+    const m = q && (t.name.toLowerCase().includes(q) || t.id.includes(q));
+    n.classList.toggle("match", !!m); if (m && !first) first = t.id;
+  });
+  if (first) { const { x, y } = L.xy.get(first), vp = $("#viewport"); vp.scrollTo({ left: x - 100, top: y - 100, behavior: "smooth" }); }
+}
+
+// Drag the empty background to pan (dragging on a card does nothing, so cards stay clickable).
+(() => { const vp = $("#viewport"); let d = null;
+  vp.addEventListener("mousedown", e => { if (e.target.closest(".node")) return; d = { x: e.clientX, y: e.clientY, l: vp.scrollLeft, t: vp.scrollTop }; vp.classList.add("drag"); });
+  addEventListener("mousemove", e => { if (d) { vp.scrollLeft = d.l - (e.clientX - d.x); vp.scrollTop = d.t - (e.clientY - d.y); } });
+  addEventListener("mouseup", () => { d = null; vp.classList.remove("drag"); });
+})();
+
+fileSel.value = state.file;
+render();
+</script>
+</body>
+</html>

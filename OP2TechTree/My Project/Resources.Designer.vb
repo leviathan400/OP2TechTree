@@ -202,9 +202,9 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         '''</summary>
-        Friend ReadOnly Property testplans() As System.Drawing.Icon
+        Friend ReadOnly Property Tech_Science() As System.Drawing.Icon
             Get
-                Dim obj As Object = ResourceManager.GetObject("testplans", resourceCulture)
+                Dim obj As Object = ResourceManager.GetObject("Tech_Science", resourceCulture)
                 Return CType(obj,System.Drawing.Icon)
             End Get
         End Property

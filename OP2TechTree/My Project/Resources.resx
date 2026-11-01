@@ -157,8 +157,8 @@
   <data name="lab_3" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\lab_3.WAV;System.IO.MemoryStream, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="testplans" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\testplans.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Tech_Science" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Tech_Science.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="banner05_620x100" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\banner05_620x100.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
