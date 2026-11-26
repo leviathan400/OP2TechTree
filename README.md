@@ -1,6 +1,8 @@
 # OP2TechTree
 
-![Screenshot](https://images.outpostuniverse.org/OP2TechTree.png)
+[![Build](https://github.com/leviathan400/OP2TechTree/actions/workflows/build.yml/badge.svg)](https://github.com/leviathan400/OP2TechTree/actions/workflows/build.yml)
+
+![Screenshot](images/OP2TechTree.png)
 
 ## What is it?
 
@@ -29,12 +31,14 @@ Each file defines different technology progressions, costs, and availability for
 - Validate a single tech or the whole tree (missing prerequisites, circular dependencies, limits)
 - Statistics, dependency view and "Find References" for any tech
 - Export to CSV
-- Civilization-style tech tree view in your web browser, with HTML export
+- Civilization-style tech tree view in your web browser, with HTML export ([examples](https://techs.outpostuniverse.org/))
 - Saving keeps the original file layout: comments, tech order, unknown tags (`PLAYER_PROP`, `FUNCTION_RESULT`, ...) and the checksum trailer in the stock OPU files. A `.bak` copy of the previous file is made on every save
 
 ## Tech Tree View
 
 **Tools > View Tech Tree in Browser** (F5) shows the whole tech tree Civilization-style in your default web browser.
+
+See it in action at **[techs.outpostuniverse.org](https://techs.outpostuniverse.org/)**, which has every stock OPU tech tree exported this way: the base game campaigns and multiplayer, the official demos and the mission maps.
 
 - Techs are arranged left to right: each tech sits one column to the right of its deepest prerequisite
 - In the campaign files (`edentek.txt`, `ply_tek.txt`) the "Tech Level N" techs become mission bands across the top

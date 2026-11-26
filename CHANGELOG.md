@@ -2,6 +2,12 @@
 
 All notable changes to OP2TechTree are listed here, newest first.
 
+## [Unreleased]
+
+### Fixed
+- Edits not yet applied were lost without warning when you picked another tech, opened a file, or added or removed a prerequisite or unit property. Switching now asks whether to apply them first
+- Two techs with the same ID were silently merged into one, so the earlier tech vanished on save. This is now reported when the file loads
+
 ## [0.8.0] - 2026-11-01
 
 ### Added

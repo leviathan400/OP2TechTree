@@ -1,0 +1,28 @@
+# Builds OP2TechTree (VB.NET WinForms, .NET Framework 4.8) on every push and pull request,
+# and keeps the Release exe as a downloadable artifact of the run.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Puts MSBuild on the PATH; the runner already has the .NET Framework 4.8 targeting pack.
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Build Release
+        run: msbuild OP2TechTree.sln -p:Configuration=Release -v:minimal -nologo
+
+      - name: Upload exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: OP2TechTree-${{ github.sha }}
+          path: OP2TechTree/bin/Release/OP2TechTree.exe
+          if-no-files-found: error

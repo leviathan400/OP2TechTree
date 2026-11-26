@@ -36,6 +36,7 @@ Public Class fMain
     Private FilePath As String = ""
     Private IsLoading As Boolean = False
     Private _isDirty As Boolean = False
+    Private _formSnapshot As String = Nothing    ' General-tab fields as last loaded or applied; see HasUnappliedEdits
 
     ' Marker used to locate the binary checksum tail in the stock OPU files.
     Private Const TrailerMarker As String = "; Garbage so checksum matches original:"
@@ -262,9 +263,10 @@ Public Class fMain
         Return Not String.IsNullOrEmpty(FilePath) OrElse TechList.Count > 0
     End Function
 
-    ''' <summary>Prompt user to save if dirty. Returns False if user cancels.</summary>
+    ''' <summary>Prompt user to save if dirty or the form has edits not yet applied. Returns False if
+    ''' user cancels.</summary>
     Private Function PromptSaveChanges() As Boolean
-        If Not _isDirty Then Return True
+        If Not _isDirty AndAlso Not HasUnappliedEdits() Then Return True
 
         Dim result = MessageBox.Show(
             "You have unsaved changes. Save before continuing?",
@@ -548,6 +550,7 @@ Public Class fMain
         Dim hasExplicitEden As Boolean = False
         Dim hasExplicitPly As Boolean = False
         Dim hasUnifiedCost As Boolean = False
+        Dim beginLine As Integer = 0                 ' 1-based line of the current BEGIN_TECH, for warnings
 
         Dim i As Integer = 0
         While i < lines.Count
@@ -576,6 +579,7 @@ Public Class fMain
 
             Select Case tag
                 Case "BEGIN_TECH"
+                    beginLine = i + 1
                     Dim newTech As New Technology()
                     Dim nameStart As Integer = rest.IndexOf(""""c)
                     If nameStart >= 0 Then
@@ -612,7 +616,11 @@ Public Class fMain
                         If String.IsNullOrEmpty(currentTech.ID) Then
                             ' Skip malformed tech with no ID
                         ElseIf techs.ContainsKey(currentTech.ID) Then
-                            ' Duplicate IDs: keep the later one (matches game behavior for single-value tags).
+                            ' Duplicate IDs: keep the later one (matches game behavior for single-value tags),
+                            ' but say so, because the earlier copy is dropped from the file on save.
+                            ParseWarnings.Add($"Line {beginLine}: tech ""{currentTech.Name}"" reuses ID {currentTech.ID}, " &
+                                              $"already used by ""{techs(currentTech.ID).Name}"". Only this later one is kept; " &
+                                              "the earlier one will be missing if you save.")
                             techs(currentTech.ID) = currentTech
                         Else
                             techs(currentTech.ID) = currentTech
@@ -924,12 +932,28 @@ Public Class fMain
 
     ' ----- Selection & editing -----
 
-    ''' <summary>Show the tech picked in the list.</summary>
+    ''' <summary>Show the tech picked in the list. If the General tab has edits that were not applied,
+    ''' ask first: Yes applies them, No drops them, Cancel stays on the edited tech.</summary>
     Private Sub lstTechnologies_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lstTechnologies.SelectedIndexChanged
         If lstTechnologies.SelectedIndex < 0 OrElse IsLoading Then Return
 
         Dim selectedText As String = lstTechnologies.SelectedItem.ToString()
         Dim techID As String = selectedText.Split(" "c)(0)
+
+        If CurrentTech IsNot Nothing AndAlso techID <> CurrentTech.ID AndAlso HasUnappliedEdits() Then
+            Dim answer = MessageBox.Show(
+                $"Apply your changes to {CurrentTech.ID} ""{CurrentTech.Name}"" before switching?",
+                "Unapplied Changes", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
+            If answer = DialogResult.Cancel OrElse (answer = DialogResult.Yes AndAlso Not SaveCurrentTech()) Then
+                ReselectCurrentTech()
+                Return
+            End If
+            If answer = DialogResult.Yes Then
+                ' Applying refilled the list and reselected the edited tech; now go where the user clicked.
+                SelectTechInList(techID)
+                Return
+            End If
+        End If
 
         ' Stay on the Dependencies tab while browsing (if the new tech has one); otherwise back to General.
         Dim stayOnDependencies As Boolean = TabControl1.SelectedTab Is TabPage3
@@ -966,6 +990,21 @@ Public Class fMain
         txtDescription.Text = tech.Description
         txtImproveDesc.Text = tech.ImproveDesc
 
+        UpdateCategoryIcon()
+        RefreshTechLists()
+        _formSnapshot = FormSnapshot()
+
+        IsLoading = False
+    End Sub
+
+    ''' <summary>Refill the current tech's Prerequisites, Unit Properties and Dependencies views.
+    ''' Those edits apply at once, so this leaves the General tab (and any unapplied edits) alone.</summary>
+    Private Sub RefreshTechLists()
+        Dim tech As Technology = CurrentTech
+        If tech Is Nothing Then Return
+        Dim wasLoading As Boolean = IsLoading
+        IsLoading = True
+
         lstPrerequisites.Items.Clear()
         For Each prereq In tech.Prerequisites
             If TechList.ContainsKey(prereq) Then
@@ -983,11 +1022,40 @@ Public Class fMain
             lstUnitProperties.Items.Add(item)
         Next
 
-        UpdateCategoryIcon()
         PopulatePrerequisiteCombo()
         UpdateDependenciesTab()
 
-        IsLoading = False
+        IsLoading = wasLoading
+    End Sub
+
+    ''' <summary>The General-tab fields that Apply writes to the tech, as one string. Taken from the
+    ''' controls themselves, so it compares like with like whatever the controls do to the text.</summary>
+    Private Function FormSnapshot() As String
+        Return String.Join(vbNullChar, txtTechID.Text, txtTechName.Text, cmbCategory.SelectedIndex.ToString(),
+                           txtMaxScientists.Text, cmbLab.SelectedIndex.ToString(), txtEdenCost.Text, txtPlymouthCost.Text,
+                           txtTeaser.Text, txtDescription.Text, txtImproveDesc.Text)
+    End Function
+
+    ''' <summary>True when the General tab was edited since the tech was loaded or last applied.</summary>
+    Private Function HasUnappliedEdits() As Boolean
+        Return CurrentTech IsNot Nothing AndAlso _formSnapshot IsNot Nothing AndAlso FormSnapshot() <> _formSnapshot
+    End Function
+
+    ''' <summary>Put the list selection back on the current tech without reloading the form, so its
+    ''' unapplied edits stay. Clears the selection if a filter hides the tech.</summary>
+    Private Sub ReselectCurrentTech()
+        IsLoading = True
+        Try
+            lstTechnologies.SelectedIndex = -1
+            For i As Integer = 0 To lstTechnologies.Items.Count - 1
+                If lstTechnologies.Items(i).ToString().StartsWith(CurrentTech.ID & " ") Then
+                    lstTechnologies.SelectedIndex = i
+                    Exit For
+                End If
+            Next
+        Finally
+            IsLoading = False
+        End Try
     End Sub
 
     ''' <summary>The Apply button.</summary>
@@ -1092,6 +1160,7 @@ Public Class fMain
                 ToolTip1.Show(msg.ToString(), btnSaveTech, 0, -20, 3000)
             End If
 
+            _formSnapshot = FormSnapshot()   ' the form now matches the tech
             MarkDirty()
             PopulateTechList()
             ' Restore selection on the new ID
@@ -1265,7 +1334,7 @@ Public Class fMain
         If Not CurrentTech.Prerequisites.Contains(prereqID) Then
             CurrentTech.Prerequisites.Add(prereqID)
             MarkDirty()
-            LoadTechToForm(CurrentTech)
+            RefreshTechLists()
         End If
     End Sub
 
@@ -1278,7 +1347,7 @@ Public Class fMain
 
         CurrentTech.Prerequisites.Remove(prereqID)
         MarkDirty()
-        LoadTechToForm(CurrentTech)
+        RefreshTechLists()
     End Sub
 
     ''' <summary>Double-click a prerequisite to open it; a missing one has its ID copied instead.</summary>
@@ -1330,7 +1399,7 @@ Public Class fMain
         txtUnitValue.Text = ""
 
         MarkDirty()
-        LoadTechToForm(CurrentTech)
+        RefreshTechLists()
     End Sub
 
     ''' <summary>Remove the selected unit property.</summary>
@@ -1339,7 +1408,7 @@ Public Class fMain
         Dim index As Integer = lstUnitProperties.SelectedIndices(0)
         CurrentTech.UnitProperties.RemoveAt(index)
         MarkDirty()
-        LoadTechToForm(CurrentTech)
+        RefreshTechLists()
     End Sub
 
     ' ----- Search / Filter -----

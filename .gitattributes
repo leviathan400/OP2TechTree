@@ -1,0 +1,3 @@
+# Outpost 2 tech files are stored exactly as the game ships them (line endings and
+# checksum trailer included), so git must not convert them.
+techs/*.txt -text
